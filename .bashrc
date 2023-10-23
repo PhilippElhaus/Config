@@ -52,10 +52,11 @@ alias l='ls -CF'
 alias cls='clear -x'
 alias upgrade='sudo apt-get update; sudo apt-get upgrade'
 alias services='service --status-all'
+alias ip='ip address show'
 
 search() {
         echo "Searching..."
-        find / -name "$1" 2> /dev/null
+        find / -iname "$1" 2> /dev/null
         echo "Search done."
 }
 
