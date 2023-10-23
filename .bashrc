@@ -59,6 +59,23 @@ search() {
         echo "Search done."
 }
 
+status() {
+  if [ -z "$1" ]; then
+    echo "Usage: status <SERVICENAME>"
+    return 1
+  fi
+
+  if ! systemctl list-units --type service --all | awk '{print $1}' | grep -q "\<$1\>"; then
+    echo "Service $1 does not exist."
+    return 1
+  fi
+
+  echo -e "\e[31m---\e[0m Ports \e[31m---\e[0m"
+  netstat -tulnp | grep "$1" | awk '{sub(/.*:/,"",$4); print $1 " " $4}'
+  echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
+  service "$1" status
+}
+
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 if ! shopt -oq posix; then
