@@ -50,7 +50,7 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
-alias upgrade='sudo apt-get update; sudo apt-get upgrade'
+alias upgrade='sudo apt-get update; sudo apt-get -y upgrade; for package in net-tools curl lsof nano nmap; do dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package; done; echo -e "\e[91m---  Upgrade Complete ---\e[0m"'
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 
