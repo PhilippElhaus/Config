@@ -52,7 +52,7 @@ alias l='ls -CF'
 alias cls='clear -x'
 alias upgrade='sudo apt-get update; sudo apt-get upgrade'
 alias services='service --status-all'
-alias ip='ip address show'
+alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 
 search() {
         echo "Searching..."
