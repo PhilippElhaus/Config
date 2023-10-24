@@ -51,7 +51,7 @@ alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
 alias upgrade='sudo apt-get update; sudo apt-get upgrade'
-alias services='service --status-all'
+alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 
 search() {
