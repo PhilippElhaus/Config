@@ -77,6 +77,41 @@ status() {
   service "$1" status
 }
 
+proc() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: proc <process_name>"
+        return 1
+    fi
+
+    process_name="$1"
+    pids=$(ps aux | grep "$process_name" | grep -v "grep" | awk '{print $2, $11}')
+
+    if [ -z "$pids" ]; then
+        echo "No PID's found for $process_name"
+    else
+        echo -e "\e[31m---\e[0m PID's containing '$process_name' \e[31m---\e[0m"
+        echo "$pids"
+        echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
+    fi
+}
+
+ports() {
+    if [ $# -ne 1 ]; then
+        echo "Usage: ports <process_name>"
+        return 1
+    fi
+
+    process_name="$1"
+    pids=$(pgrep "$process_name")
+
+    if [ -z "$pids" ]; then
+        echo "No processes found for: $process_name"
+    else
+        echo "NAME | PID : TYPE | PROTOCOL | PORT"
+        lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
+    fi
+}
+
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 if ! shopt -oq posix; then
