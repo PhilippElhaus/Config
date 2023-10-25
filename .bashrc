@@ -52,9 +52,42 @@ alias l='ls -CF'
 alias cls='clear -x'
 alias df='df -h'
 alias du='du -sh'
-alias upgrade='sudo apt-get update; sudo apt-get -y upgrade; for package in net-tools curl lsof nano nmap; do dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package; done; sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc; sudo cp /root/.bashrc ~/.bashrc;  echo -e "\e[91m---  Upgrade Complete ---\e[0m"'
+alias dir='ls -alhS'
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
+
+upgrade() {
+  echo -e "\e[91m---  Upgrading System ---\e[0m"
+  adapters=$(ip -o link show | awk -F': ' '{print $2}')
+  for adapter in $adapters
+    do
+      if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+        sudo ip link set dev "$adapter" mtu 1000
+      fi
+    done
+
+  sudo apt-get update
+  sudo apt-get -y upgrade
+  sudo apt-get autoclean
+  sudo apt-get -y autoremove
+
+  for package in net-tools curl lsof nano nmap
+  do
+    dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
+  done
+
+  sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
+  sudo cp /root/.bashrc ~/.bashrc
+
+  for adapter in $adapters
+    do
+      if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+        sudo ip link set dev "$adapter" mtu 1500
+      fi
+    done
+
+  echo -e "\e[91m---  Upgrade Complete ---\e[0m"
+}
 
 search() {
         echo "Searching..."
