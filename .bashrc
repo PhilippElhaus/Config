@@ -36,7 +36,7 @@ PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias ls='ls --color=auto'
-    alias dir='dir --color=auto'
+    alias dir='dir -alhS --color=auto'
     alias vdir='vdir --color=auto'
 
     alias grep='grep --color=auto'
@@ -52,7 +52,7 @@ alias l='ls -CF'
 alias cls='clear -x'
 alias df='df -h'
 alias du='du -sh'
-alias dir='ls -alhS'
+alias tree='tree -L 1 --dirsfirst'
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 
@@ -71,7 +71,7 @@ upgrade() {
   sudo apt-get autoclean
   sudo apt-get -y autoremove
 
-  for package in net-tools curl lsof nano nmap
+  for package in net-tools curl lsof nano nmap tree
   do
     dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
   done
