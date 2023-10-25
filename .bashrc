@@ -86,6 +86,8 @@ upgrade() {
       fi
     done
 
+  source ~/.bashrc
+
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
 
