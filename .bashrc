@@ -50,11 +50,40 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
-alias df='df -h'
-alias du='du -sh'
-alias tree='tree -L 1 --dirsfirst'
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
+
+df() {
+    if [ $# -eq 0 ]; then
+        command df -h
+    else
+        command df "$@"
+    fi
+}
+
+du() {
+    if [ $# -eq 0 ]; then
+        command du -sh
+    else
+        command du "$@"
+    fi
+}
+
+pushd() {
+    if [ $# -eq 0 ]; then
+        command pushd .
+    else
+        command pushd "$@"
+    fi
+}
+
+tree() {
+    if [ $# -eq 0 ]; then
+        command tree -L 1 --dirsfirst
+    else
+        command tree "$@"
+    fi
+}
 
 upgrade() {
   echo -e "\e[91m---  Upgrading System ---\e[0m"
