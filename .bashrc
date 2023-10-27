@@ -88,6 +88,7 @@ tree() {
 
 upgrade() {
   echo -e "\e[91m---  Upgrading System ---\e[0m"
+  timedatectl set-timezone CET
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters
     do
