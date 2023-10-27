@@ -102,7 +102,7 @@ upgrade() {
   sudo apt-get autoclean
   sudo apt-get -y autoremove
 
-  for package in net-tools curl lsof nano nmap tree
+  for package in net-tools curl lsof nano nmap tree unzip
   do
     dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
   done
