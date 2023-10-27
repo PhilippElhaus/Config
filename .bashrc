@@ -51,8 +51,18 @@ alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
 alias nano='nano --linenumbers'
+alias list='dpkg --get-selections'
+alias gateway="ip route | awk '/default/ {print $3}' | cut -d' ' -f1-3"
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
+
+route() {
+    if [ $# -eq 0 ]; then
+        command route -n
+    else
+        command route "$@"
+    fi
+}
 
 df() {
     if [ $# -eq 0 ]; then
@@ -87,7 +97,7 @@ tree() {
 }
 
 upgrade() {
-  echo -e "\e[91m---  Upgrading System ---\e[0m"
+  echo -e "\e[91m--- Upgrading System ---\e[0m"
   timedatectl set-timezone CET
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters
@@ -176,11 +186,10 @@ ports() {
         echo "No processes found for: $process_name"
     else
         echo "NAME | PID : TYPE | PROTOCOL | PORT"
+        echo "-----------------------------------"
         lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
     fi
 }
-
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
