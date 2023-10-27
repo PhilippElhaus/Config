@@ -54,9 +54,11 @@ alias nano='nano --linenumbers'
 alias list='dpkg --get-selections'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
-alias ns="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
+alias nameserver="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
+alias ns='nameserver'
 alias gateway="ip route | awk '/default/ {print $3}' | cut -d' ' -f1-3"
-alias net='ips; ns; gateway'
+alias gw='gateway'
+alias net='ips; nameserver; gateway'
 
 alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
 
