@@ -152,6 +152,7 @@ upgrade() {
 echo -e "\n  \e[1;31m---  $1  ---\e[0m\n"
 echo -e " " $(lsb_release -s -d);
 /usr/share/landscape/landscape-sysinfo.wrapper* 2> /dev/null;
+echo -e " ";
 EOL
     sudo chmod +x /etc/update-motd.d/99-custom-motd
     sudo run-parts /etc/update-motd.d/
