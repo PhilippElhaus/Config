@@ -1,9 +1,11 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
+# ~/.bashrc [non-login shells]
 
 case $- in
     *i*) ;;
       *) return;;
 esac
+
+# Default
 
 HISTCONTROL=ignoreboth
 HISTSIZE=1000
@@ -33,6 +35,8 @@ fi
 unset color_prompt force_color_prompt
 PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\] \[\033[01;34m\]\@ \[\033[01;35m\]\w \[\033[00m\]$ "
 
+# Alias
+
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias ls='ls --color=auto'
@@ -60,48 +64,6 @@ alias ns='nameserver'
 alias gateway="ip route | awk '/default/ {print $3}' | cut -d' ' -f1-3"
 alias gw='gateway'
 alias net='ips; nameserver; gateway'
-
-alias services='service_output=$(service --status-all); plus_lines=$(echo "$service_output" | grep " \[ + \]"); minus_lines=$(echo "$service_output" | grep " \[ - \]"); echo -e "$plus_lines\n---\n$minus_lines"'
-
-route() {
-    if [ $# -eq 0 ]; then
-        command route -n
-    else
-        command route "$@"
-    fi
-}
-
-df() {
-    if [ $# -eq 0 ]; then
-        command df -h
-    else
-        command df "$@"
-    fi
-}
-
-du() {
-    if [ $# -eq 0 ]; then
-        command du -sh
-    else
-        command du "$@"
-    fi
-}
-
-pushd() {
-    if [ $# -eq 0 ]; then
-        command pushd .
-    else
-        command pushd "$@"
-    fi
-}
-
-tree() {
-    if [ $# -eq 0 ]; then
-        command tree -L 1 --dirsfirst
-    else
-        command tree "$@"
-    fi
-}
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
@@ -161,10 +123,18 @@ EOL
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
 
-search() {
-        echo "Searching..."
-        find / -iname "$1" 2> /dev/null
-        echo "Search done."
+# Usability
+
+services() {
+    local service_output
+    local plus_lines
+    local minus_lines
+
+    service_output=$(service --status-all)
+    plus_lines=$(echo "$service_output" | grep " \[ + \]")
+    minus_lines=$(echo "$service_output" | grep " \[ - \]")
+
+    echo -e "$plus_lines\n---\n$minus_lines"
 }
 
 status() {
@@ -216,7 +186,55 @@ ports() {
     else
         echo "NAME | PID : TYPE | PROTOCOL | PORT"
         echo "-----------------------------------"
-        lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
+        sudo lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
+    fi
+}
+
+search() {
+        echo "Searching..."
+        find / -iname "$1" 2> /dev/null
+        echo "Search done."
+}
+
+# Shorthand
+
+route() {
+    if [ $# -eq 0 ]; then
+        command route -n
+    else
+        command route "$@"
+    fi
+}
+
+df() {
+    if [ $# -eq 0 ]; then
+        command df -h
+    else
+        command df "$@"
+    fi
+}
+
+du() {
+    if [ $# -eq 0 ]; then
+        command du -sh
+    else
+        command du "$@"
+    fi
+}
+
+pushd() {
+    if [ $# -eq 0 ]; then
+        command pushd .
+    else
+        command pushd "$@"
+    fi
+}
+
+tree() {
+    if [ $# -eq 0 ]; then
+        command tree -L 1 --dirsfirst
+    else
+        command tree "$@"
     fi
 }
 
