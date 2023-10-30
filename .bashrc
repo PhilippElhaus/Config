@@ -52,6 +52,7 @@ alias l='ls -CF'
 alias cls='clear -x'
 alias nano='nano --linenumbers'
 alias list='dpkg --get-selections'
+alias hex='xxd'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 alias nameserver="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
@@ -103,37 +104,58 @@ tree() {
 }
 
 upgrade() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
+    echo "upgrade               # executes the script"
+    echo "upgrade arg1          # additional change to hostname in welcome text"
+    echo "upgrade arg1 arg2     # additional change to the actual hostname"
+    return
+  fi
   echo -e "\e[91m--- Upgrading System ---\e[0m"
   timedatectl set-timezone CET
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
-  for adapter in $adapters
-    do
-      if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-        sudo ip link set dev "$adapter" mtu 1000
-      fi
-    done
+  for adapter in $adapters; do
+    if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+      sudo ip link set dev "$adapter" mtu 1000
+    fi
+  done
 
   sudo apt-get update
   sudo apt-get -y upgrade
   sudo apt-get autoclean
   sudo apt-get -y autoremove
 
-  for package in net-tools curl lsof nano nmap tree unzip
-  do
+  for package in net-tools curl lsof nano nmap tree unzip; do
     dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
   done
 
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
   sudo cp /root/.bashrc ~/.bashrc
 
-  for adapter in $adapters
-    do
-      if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-        sudo ip link set dev "$adapter" mtu 1500
-      fi
-    done
+  for adapter in $adapters; do
+    if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+      sudo ip link set dev "$adapter" mtu 1500
+    fi
+  done
 
   source ~/.bashrc
+
+  if [ -n "$1" ]; then
+    if [ -n "$2" ]; then
+      new_hostname="$2"
+      sudo sh -c "echo '$new_hostname' > /etc/hostname"
+      sudo sed -i "s/127.0.1.1.*/127.0.1.1 $new_hostname/" /etc/hosts
+    fi
+
+    sudo rm -f /etc/update-motd.d/*
+    sudo tee /etc/update-motd.d/99-custom-motd <<EOL
+#!/bin/bash
+echo -e "\n  \e[1;31m---  $1  ---\e[0m\n"
+echo -e " " $(lsb_release -s -d);
+/usr/share/landscape/landscape-sysinfo.wrapper* 2> /dev/null;
+EOL
+    sudo chmod +x /etc/update-motd.d/99-custom-motd
+    sudo run-parts /etc/update-motd.d/
+  fi
 
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
