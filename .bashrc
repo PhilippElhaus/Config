@@ -77,8 +77,8 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
-alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,iconv,xml,gd,xsl}'
-alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,ssl,rewrite,headers,proxy,security2,deflate,expires} mod-{cache,gzip,evasive}'
+alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common'
+alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,security2}'
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
@@ -94,13 +94,27 @@ upgrade() {
   fi
 
   echo -e "\e[91m--- Upgrading System ---\e[0m"
+  
   timedatectl set-timezone CET
+  
+    #Temporary MTU @ 500
+
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters; do
     if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
       sudo ip link set dev "$adapter" mtu 500
     fi
   done
+
+    # Shutdown IPV6
+
+  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
+  sudo sysctl -p
+
+    # Disable IPV6 Permanent
 
   if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
     sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
@@ -120,25 +134,39 @@ upgrade() {
     echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
   fi
 
-  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+    # Import Public Keys for 3rd Party Repos
 
-  sudo sysctl -p
+  sudo gpg --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 7FCC7D46ACCC4CF8 467B942D3A79BD29
+  sudo gpg --export --armor ABF5BD827BD9BF62 | sudo tee /etc/apt/trusted.gpg.d/nginx.gpg
+  sudo gpg --export --armor 7FCC7D46ACCC4CF8 | sudo tee /etc/apt/trusted.gpg.d/postgre.gpg
+  sudo gpg --export --armor 467B942D3A79BD29 | sudo tee /etc/apt/trusted.gpg.d/mysql.gpg
+
+    # Add Additional Repos
+
+  sudo add-apt-repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
+  sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+  sudo add-apt-repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
 
   sudo add-apt-repository -y ppa:ondrej/php
   sudo add-apt-repository -y ppa:ondrej/apache2
+
+    # Execute Updates
 
   sudo apt-get update
   sudo apt-get -y upgrade
   sudo apt-get autoclean
   sudo apt-get -y autoremove
 
-  for package in net-tools curl lsof nano nmap tree unzip; do
+    # Install necessities
+
+  for package in net-tools wget curl lsof nano nmap tree unzip; do
     dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
   done
 
+    # Update and spread latest .bashrc
+
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
+  source ~/.bashrc
 
   local root_bashrc="/root/.bashrc"
   
@@ -151,13 +179,15 @@ upgrade() {
       done
   fi
 
+    # Reset MTU to 1500
+
   for adapter in $adapters; do
     if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
       sudo ip link set dev "$adapter" mtu 1500
     fi
   done
-  
-  source ~/.bashrc
+
+    # Optional MOTD and Hostname Change
 
   if [ -n "$1" ]; then
     if [ -n "$2" ]; then
