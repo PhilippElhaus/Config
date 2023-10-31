@@ -48,6 +48,17 @@ if [ -x /usr/bin/dircolors ]; then
     alias egrep='egrep --color=auto'
 fi
 
+unalias upgrade 2> /dev/null
+unalias services 2> /dev/null
+unalias status 2> /dev/null
+unalias proc 2> /dev/null
+unalias search 2> /dev/null
+unalias route 2> /dev/null
+unalias df 2> /dev/null
+unalias du 2> /dev/null
+unalias pushd 2> /dev/null
+unalias tree 2> /dev/null
+
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 alias ll='ls -alF'
@@ -64,6 +75,10 @@ alias ns='nameserver'
 alias gateway="ip route | awk '/default/ {print $3}' | cut -d' ' -f1-3"
 alias gw='gateway'
 alias net='ips; nameserver; gateway'
+alias linux='lsb_release -s -d'
+
+alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,iconv,xml,gd,xsl}'
+alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,ssl,rewrite,headers,proxy,security2,deflate,expires} mod-{cache,gzip,evasive}'
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
@@ -81,6 +96,33 @@ upgrade() {
     fi
   done
 
+  if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
+    sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
+  else
+    echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+  fi
+
+  if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
+    sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
+  else
+    echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+  fi
+
+  if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
+    sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
+  else
+    echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+  fi
+
+  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
+  sudo sysctl -p
+
+  sudo add-apt-repository -y ppa:ondrej/php
+  sudo add-apt-repository -y ppa:ondrej/apache2
+  
   sudo apt-get update
   sudo apt-get -y upgrade
   sudo apt-get autoclean
@@ -99,6 +141,10 @@ upgrade() {
     fi
   done
 
+  
+
+
+  
   source ~/.bashrc
 
   if [ -n "$1" ]; then
@@ -122,6 +168,7 @@ EOL
 
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
+
 
 # Usability
 
