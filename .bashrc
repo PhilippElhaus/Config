@@ -87,6 +87,12 @@ upgrade() {
     echo "upgrade arg1 arg2     # additional change to the actual hostname"
     return
   fi
+
+  if [ "$EUID" -ne 0 ]; then
+    echo "Superuser priviliges required for execution."
+    return
+  fi
+
   echo -e "\e[91m--- Upgrading System ---\e[0m"
   timedatectl set-timezone CET
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
@@ -122,7 +128,7 @@ upgrade() {
 
   sudo add-apt-repository -y ppa:ondrej/php
   sudo add-apt-repository -y ppa:ondrej/apache2
-  
+
   sudo apt-get update
   sudo apt-get -y upgrade
   sudo apt-get autoclean
@@ -135,15 +141,22 @@ upgrade() {
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
   sudo cp /root/.bashrc ~/.bashrc
 
+  root_bashrc="/root/.bashrc"
+  
+  if [ -f "$root_bashrc" ]; then
+      for user_home in /home/*; do
+        if [ -d "$user_home" ]; then
+          user_bashrc="$user_home/.bashrc"
+          sudo cp "$root_bashrc" "$user_bashrc"
+        fi
+      done
+  fi
+
   for adapter in $adapters; do
     if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
       sudo ip link set dev "$adapter" mtu 1500
     fi
   done
-
-  
-
-
   
   source ~/.bashrc
 
@@ -168,7 +181,6 @@ EOL
 
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
-
 
 # Usability
 
