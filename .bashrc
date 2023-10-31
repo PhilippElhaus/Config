@@ -139,9 +139,8 @@ upgrade() {
   done
 
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
-  sudo cp /root/.bashrc ~/.bashrc
 
-  root_bashrc="/root/.bashrc"
+  local root_bashrc="/root/.bashrc"
   
   if [ -f "$root_bashrc" ]; then
       for user_home in /home/*; do
