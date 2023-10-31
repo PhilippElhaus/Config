@@ -82,7 +82,7 @@ alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,security2}
 
 colorize_errors() {
     while IFS= read -r line; do
-        echo -e "\e[91m$line\e[0m" >&2
+        echo -e "\e[93m$line\e[0m" >&2
     done
 }
 
