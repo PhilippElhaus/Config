@@ -80,6 +80,12 @@ alias linux='lsb_release -s -d'
 alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common'
 alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,security2}'
 
+colorize_errors() {
+    while IFS= read -r line; do
+        echo -e "\e[91m$line\e[0m" >&2
+    done
+}
+
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
     echo "upgrade               # executes the script"
@@ -95,6 +101,8 @@ upgrade() {
 
   echo -e "\e[91m--- Upgrading System ---\e[0m"
   
+{
+
   timedatectl set-timezone CET
   
     #Temporary MTU @ 500
@@ -207,7 +215,8 @@ EOL
     sudo chmod +x /etc/update-motd.d/99-custom-motd
     sudo run-parts /etc/update-motd.d/
   fi
-
+  
+} 2> >(colorize_errors)
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
 
