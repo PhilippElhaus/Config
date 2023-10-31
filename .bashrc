@@ -137,15 +137,15 @@ upgrade() {
     # Import Public Keys for 3rd Party Repos
 
   sudo gpg --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62 7FCC7D46ACCC4CF8 467B942D3A79BD29
-  sudo gpg --export --armor ABF5BD827BD9BF62 | sudo tee /etc/apt/trusted.gpg.d/nginx.gpg
-  sudo gpg --export --armor 7FCC7D46ACCC4CF8 | sudo tee /etc/apt/trusted.gpg.d/postgre.gpg
-  sudo gpg --export --armor 467B942D3A79BD29 | sudo tee /etc/apt/trusted.gpg.d/mysql.gpg
+  sudo gpg --export ABF5BD827BD9BF62 > /etc/apt/trusted.gpg.d/nginx.gpg
+  sudo gpg --export 7FCC7D46ACCC4CF8 > /etc/apt/trusted.gpg.d/postgre.gpg
+  sudo gpg --export 467B942D3A79BD29 > /etc/apt/trusted.gpg.d/mysql.gpg
 
     # Add Additional Repos
 
-  sudo add-apt-repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
-  sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
-  sudo add-apt-repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
+  sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
+  sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+  sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
 
   sudo add-apt-repository -y ppa:ondrej/php
   sudo add-apt-repository -y ppa:ondrej/apache2
