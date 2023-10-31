@@ -98,7 +98,7 @@ upgrade() {
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters; do
     if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-      sudo ip link set dev "$adapter" mtu 1000
+      sudo ip link set dev "$adapter" mtu 500
     fi
   done
 
