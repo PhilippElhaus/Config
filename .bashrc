@@ -160,7 +160,7 @@ upgrade() {
     # Install necessities
 
   for package in net-tools wget curl lsof nano nmap tree unzip; do
-    dpkg-query -W --showformat="${Status}" $package | grep -q "installed" || sudo apt-get -y install $package
+    dpkg-query -W --showformat="${Status}\n" $package | grep -q "installed" || sudo apt-get -y install $package
   done
 
     # Update and spread latest .bashrc
