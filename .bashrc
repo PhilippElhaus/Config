@@ -129,9 +129,9 @@ upgrade() {
 
     # Shutdown IPV6
 
-  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 > /dev/null
-  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 > /dev/null
-  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
+  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 > /dev/null 2>&1
+  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 > /dev/null 2>&1
+  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 > /dev/null 2>&1
 
   sudo sysctl -p
 
@@ -181,20 +181,24 @@ upgrade() {
   echo "Adding ppa:ondrej/apache2 Repository...";
   sudo add-apt-repository -y ppa:ondrej/apache2 > /dev/null;
 
-    # Execute Updates
+    # Execute Updates & Install necessities
 
   export DEBIAN_FRONTEND=noninteractive
+
+  local packages_to_install=()
+  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip; do
+      if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
+          packages_to_install+=("$package")
+      fi
+  done  
+  if [ ${#packages_to_install[@]} -gt 0 ]; then
+      sudo apt-get -y install "${packages_to_install[@]}"
+  fi
 
   sudo apt-get update
   sudo apt-get -y upgrade
   sudo apt-get autoclean
   sudo apt-get -y autoremove
-
-    # Install necessities
-
-  for package in net-tools wget curl lsof nano nmap tree unzip; do
-    dpkg-query -W --showformat="${Status}\n" $package | grep -q "installed" || sudo apt-get -y install $package
-  done
 
     # Update and spread latest .bashrc
 
