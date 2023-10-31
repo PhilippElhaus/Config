@@ -80,11 +80,24 @@ alias linux='lsb_release -s -d'
 alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common'
 alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,security2}'
 
+    # Helper Functions
+
 colorize_errors() {
     while IFS= read -r line; do
         echo -e "\e[93m$line\e[0m" >&2
     done
 }
+
+check_repository() {
+    local repo="$1"
+    if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+        return 0  # Repository found
+    else
+        return 1  # Repository not found
+    fi
+}
+
+    # Full System Upgrade
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
@@ -116,9 +129,9 @@ upgrade() {
 
     # Shutdown IPV6
 
-  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
-  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+  sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 > /dev/null
+  sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 > /dev/null
+  sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
 
   sudo sysctl -p
 
@@ -151,16 +164,26 @@ upgrade() {
 
     # Add Additional Repos
 
-  sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
-  sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
-  sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
+  if ! check_repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"; then
+      sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
+  fi
+  
+  if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
+      sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+  fi
+  
+  if ! check_repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"; then
+      sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
+  fi
 
-  sudo add-apt-repository -y ppa:ondrej/php
-  sudo add-apt-repository -y ppa:ondrej/apache2
+  echo "Adding ppa:ondrej/php Repository...";
+  sudo add-apt-repository -y ppa:ondrej/php > /dev/null;
+  echo "Adding ppa:ondrej/apache2 Repository...";
+  sudo add-apt-repository -y ppa:ondrej/apache2 > /dev/null;
 
     # Execute Updates
 
-  sudo export DEBIAN_FRONTEND=noninteractive
+  export DEBIAN_FRONTEND=noninteractive
 
   sudo apt-get update
   sudo apt-get -y upgrade
