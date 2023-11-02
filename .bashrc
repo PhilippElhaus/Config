@@ -58,6 +58,8 @@ unalias df 2> /dev/null
 unalias du 2> /dev/null
 unalias pushd 2> /dev/null
 unalias tree 2> /dev/null
+unalias install_apache 2> /dev/null
+unalias install_php 2> /dev/null
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
@@ -77,8 +79,51 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
-alias install_php='sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common'
-alias install_apache='sudo apt -y install apache2 libapache2-mod-{php,security2}'
+	# Default Software Installs
+
+install_apache() {
+  if [ "$EUID" -ne 0 ]; then
+	echo "Superuser priviliges required for execution."
+	return
+  fi
+    sudo apt -y install apache2 libapache2-mod-{php,security2}
+    sudo a2enmod rewrite ssl headers
+    sudo systemctl restart apache2
+}
+
+install_php() {
+  if [ "$EUID" -ne 0 ]; then
+	echo "Superuser priviliges required for execution."
+	return
+  fi
+    sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common
+    sudo phpenmod curl zip bz2 gd imagick intl apcu memcache imap mysql cas ldap tidy pear xmlrpc pspell mbstring json gd xml xsl
+    sudo systemctl restart apache2
+}
+
+install_mysql() {
+  if [ "$EUID" -ne 0 ]; then
+    echo "Superuser privileges required for execution."
+    return
+  fi
+
+  if [ -z "$1" ]; then
+    echo "MySQL root password is required as an argument."
+    return
+  fi
+
+  local root_password="$1"
+
+  sudo apt update
+  sudo DEBIAN_FRONTEND=noninteractive apt -y install mysql-server
+  sudo systemctl start mysql
+  sudo systemctl enable mysql
+  sleep 5
+
+  if ! sudo mysql -u root -p "${root_password}" -e "SHOW PLUGINS" | grep -q 'validate_password'; then
+    sudo mysql -u root -p "${root_password}" -e "INSTALL PLUGIN validate_password SONAME 'validate_password.so';"
+  fi
+}
 
 	# Helper Functions
 
