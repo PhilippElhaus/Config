@@ -176,10 +176,13 @@ upgrade() {
       sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
   fi
 
-  echo "Adding ppa:ondrej/php Repository...";
-  sudo add-apt-repository -y ppa:ondrej/php > /dev/null;
-  echo "Adding ppa:ondrej/apache2 Repository...";
-  sudo add-apt-repository -y ppa:ondrej/apache2 > /dev/null;
+  local repos=("ondrej/php" "ondrej/apache2")
+  for repo in "${repos[@]}"; do
+    if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+      echo "Adding ppa:$repo Repository..."
+      sudo add-apt-repository -y "ppa:$repo"
+    fi
+  done
 
     # Execute Updates & Install necessities
 
