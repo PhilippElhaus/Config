@@ -209,10 +209,20 @@ upgrade() {
   fi
 
   sudo apt-get update
-  sudo apt-get -y upgrade
+  
+  upgrade_out=$(sudo apt-get -s upgrade)
+  autoremove_out=$(sudo apt-get -s autoremove)
+  
+  if echo "$upgrade_out" | grep -q 'upgraded [1-9]\+'; then
+      sudo apt-get -y upgrade
+  fi
+  
   sudo apt-get autoclean
-  sudo apt-get -y autoremove
-
+  
+  if echo "$autoremove_out" | grep -q 'to remove [1-9]\+'; then
+      sudo apt-get -y autoremove
+  fi
+  
 	# Update and spread latest .bashrc
 
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
