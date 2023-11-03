@@ -98,10 +98,10 @@ install_apache() {
     sudo rm -f /etc/apache2/apache2.conf
     sudo rm -rf /etc/apache2/sites-available
     sudo rm -rf /etc/apache2/sites-enabled
-	sudo rm -r /var/www/*
+    sudo rm -r /var/www/*
     echo "Deleted initial config files..."
 
-    sudo tee /etc/apache2/apache2.conf >/dev/null <<EOL
+sudo tee /etc/apache2/apache2.conf >/dev/null <<EOL
 DefaultRuntimeDir \${APACHE_RUN_DIR}
 PidFile \${APACHE_PID_FILE}
 Timeout 300
@@ -156,7 +156,7 @@ Listen 80
 </FilesMatch>
 EOL
 
- sudo tee /var/www/index.php tee >/dev/null <<EOL
+sudo tee /var/www/index.php tee >/dev/null <<EOL
 <!DOCTYPE html>
 <html>
   <head>
@@ -173,12 +173,12 @@ EOL
   </body>
 </html>
 EOL
-	echo "Created new default config file."
-	sudo chown -R www-data:www-data /var/www/
+    echo "Created new default config file."
+    sudo chown -R www-data:www-data /var/www/
     sudo chmod -R 755 /var/www/
     sudo a2enmod rewrite ssl headers
     sudo systemctl restart apache2
-	echo -e "\e[91m--- Done ---\e[0m"
+    echo -e "\e[91m--- Done ---\e[0m"
   fi
 
   unset choice
