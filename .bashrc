@@ -68,7 +68,7 @@ alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
 alias nano='nano --linenumbers'
-alias list='dpkg --get-selections'
+alias list='dpkg --get-selections | grep -i'
 alias hex='xxd'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
@@ -83,17 +83,111 @@ alias linux='lsb_release -s -d'
 
 install_apache() {
   if [ "$EUID" -ne 0 ]; then
-	echo "Superuser priviliges required for execution."
+	echo "You need to be root."
 	return
   fi
+
+  read -p "Do you want to proceed? (Y/N): " choice
+  if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
+
     sudo apt -y install apache2 libapache2-mod-{php,security2}
+
+    sudo rm -f /etc/apache2/sites-available/*
+    sudo rm -f /etc/apache2/sites-enabled/*
+    sudo rm -f /etc/apache2/ports.conf
+    sudo rm -f /etc/apache2/apache2.conf
+    sudo rm -rf /etc/apache2/sites-available
+    sudo rm -rf /etc/apache2/sites-enabled
+	sudo rm -r /var/www/*
+    echo "Deleted initial config files..."
+
+    sudo tee /etc/apache2/apache2.conf >/dev/null <<EOL
+DefaultRuntimeDir \${APACHE_RUN_DIR}
+PidFile \${APACHE_PID_FILE}
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+User \${APACHE_RUN_USER}
+Group \${APACHE_RUN_GROUP}
+HostnameLookups Off
+AccessFileName .htaccess
+
+IncludeOptional mods-enabled/*.load
+IncludeOptional mods-enabled/*.conf
+IncludeOptional conf-enabled/*.conf
+
+ErrorLog \${APACHE_LOG_DIR}/error.log
+CustomLog \${APACHE_LOG_DIR}/access.log combined
+
+LogLevel warn
+
+LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %O" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+
+Listen 80
+
+<VirtualHost *:80>
+    DocumentRoot /var/www/
+</VirtualHost>
+
+<Directory /var/www/>
+        Options Indexes FollowSymLinks
+        DirectoryIndex index.php
+        Require all granted
+        RewriteEngine On
+        AllowOverride All
+
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^(.*)$ index.php [QSA,L]
+</Directory>
+
+<Directory />
+        Options FollowSymLinks
+        AllowOverride None
+        Require all denied
+</Directory>
+
+<FilesMatch "^\.ht">
+        Require all denied
+</FilesMatch>
+EOL
+
+ sudo tee /var/www/index.php tee >/dev/null <<EOL
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache2 WebServer</title>
+  </head>
+  <body>
+    <h1>Success</h1>
+    <p>This file is reachable.</p>
+	<p>PHP Status:<b>
+	<?php
+    echo "OK";
+    ?></b>
+	</p>
+  </body>
+</html>
+EOL
+	echo "Created new default config file."
+	sudo chown -R www-data:www-data /var/www/
+    sudo chmod -R 755 /var/www/
     sudo a2enmod rewrite ssl headers
     sudo systemctl restart apache2
+	echo -e "\e[91m--- Done ---\e[0m"
+  fi
+
+  unset choice
+
 }
 
 install_php() {
   if [ "$EUID" -ne 0 ]; then
-	echo "Superuser priviliges required for execution."
+	echo "You need to be root."
 	return
   fi
     sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common
@@ -103,8 +197,8 @@ install_php() {
 
 install_mysql() {
   if [ "$EUID" -ne 0 ]; then
-    echo "Superuser privileges required for execution."
-    return
+	echo "You need to be root."
+	return
   fi
 
   if [ -z "$1" ]; then
@@ -136,12 +230,21 @@ colorize_errors() {
 check_repository() {
 	local repo="$1"
 	if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-		return 0  # Repository found
+		return 0
 	else
-		return 1  # Repository not found
+		return 1
 	fi
 }
 
+cleanup() {
+  if [ "$EUID" -ne 0 ]; then
+    echo "You need to be root."
+    return
+  fi
+  dpkg --get-selections | grep -E 'deinstall$' | cut -f 1 | while read -r package; do dpkg --purge "$package" 2>/dev/null; done
+  dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
+  echo "Done."
+}
 	# Full System Upgrade
 
 upgrade() {
@@ -153,7 +256,7 @@ upgrade() {
   fi
 
   if [ "$EUID" -ne 0 ]; then
-	echo "Superuser priviliges required for execution."
+	echo "You need to be root."
 	return
   fi
 
