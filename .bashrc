@@ -87,10 +87,10 @@ install_apache() {
 	return
   fi
 
-  read -p "Do you want to proceed? (Y/N): " choice
+  read -p "Will overwrite any existing installation. Do you want to proceed? (Y/N): " choice
   if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
 
-    sudo apt -y install apache2 libapache2-mod-{php,security2}
+    sudo apt -y install apache2 libapache2-mod-{php,security2,fcgid}
 
     sudo rm -f /etc/apache2/sites-available/*
     sudo rm -f /etc/apache2/sites-enabled/*
@@ -197,27 +197,52 @@ install_php() {
 
 install_mysql() {
   if [ "$EUID" -ne 0 ]; then
-	echo "You need to be root."
-	return
-  fi
-
-  if [ -z "$1" ]; then
-    echo "MySQL root password is required as an argument."
+    echo "You need to be root."
     return
   fi
 
-  local root_password="$1"
+  if [ "$#" -ne 3 ]; then
+    echo "Database (1), Username (2), and Password (3) are required as arguments."
+    return
+  fi
+
+  local initial_db_name="$1"
+  local new_user="$2"
+  local password="$3"
 
   sudo apt update
   sudo DEBIAN_FRONTEND=noninteractive apt -y install mysql-server
   sudo systemctl start mysql
   sudo systemctl enable mysql
-  sleep 5
 
-  if ! sudo mysql -u root -p "${root_password}" -e "SHOW PLUGINS" | grep -q 'validate_password'; then
-    sudo mysql -u root -p "${root_password}" -e "INSTALL PLUGIN validate_password SONAME 'validate_password.so';"
-  fi
+   mysql -u root <<EOF
+  CREATE DATABASE IF NOT EXISTS $initial_db_name;
+  CREATE USER '$new_user'@'localhost' IDENTIFIED BY '$password';
+  GRANT ALL PRIVILEGES ON $initial_db_name.* TO '$new_user'@'localhost';
+  FLUSH PRIVILEGES;
+EOF
+  echo "MySQL installed. Database, user, and password created."
 }
+
+
+install_ftp() {
+  if [ "$EUID" -ne 0 ]; then
+	echo "You need to be root."
+	return
+  fi
+  sudo apt update
+  sudo apt install -y vsftpd
+
+  sudo systemctl start vsftpd
+  sudo systemctl enable vsftpd
+
+  if command -v ufw &> /dev/null; then
+  	sudo ufw allow 21/tcp
+  fi
+
+  sudo systemctl restart vsftpd
+}
+
 
 	# Helper Functions
 
@@ -241,6 +266,7 @@ cleanup() {
     echo "You need to be root."
     return
   fi
+  apt autoremove
   dpkg --get-selections | grep -E 'deinstall$' | cut -f 1 | while read -r package; do dpkg --purge "$package" 2>/dev/null; done
   dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
   echo "Done."
@@ -277,9 +303,9 @@ upgrade() {
 
 	# Shutdown IPV6
 
-  sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null 2>&1
-  sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null 2>&1
-  sudo sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null 2>&1
+  sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
+  sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
+  sudo sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
 
   sudo sysctl -p
 
@@ -288,19 +314,19 @@ upgrade() {
   if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
 	sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
   else
-	echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+	echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
   fi
 
   if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
 	sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
   else
-	echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+	echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
   fi
 
   if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
 	sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
   else
-	echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf
+	echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
   fi
 
 	# Import Public Keys for 3rd Party Repos
