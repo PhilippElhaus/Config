@@ -40,7 +40,7 @@ PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\
 if [ -x /usr/bin/dircolors ]; then
 	test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
 	alias ls='ls --color=auto'
-	alias dir='dir -alhS --color=auto'
+	alias dir='ls -alhS --color=auto --group-directories-first'
 	alias vdir='vdir --color=auto'
 
 	alias grep='grep --color=auto'
@@ -224,7 +224,6 @@ EOF
   echo "MySQL installed. Database, user, and password created."
 }
 
-
 install_ftp() {
   if [ "$EUID" -ne 0 ]; then
 	echo "You need to be root."
@@ -242,7 +241,6 @@ install_ftp() {
 
   sudo systemctl restart vsftpd
 }
-
 
 	# Helper Functions
 
