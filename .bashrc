@@ -60,6 +60,9 @@ unalias pushd 2> /dev/null
 unalias tree 2> /dev/null
 unalias install_apache 2> /dev/null
 unalias install_php 2> /dev/null
+unalias install_mysql 2> /dev/null
+unalias install_nginx 2> /dev/null
+unalias install_ftp 2> /dev/null
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
@@ -157,21 +160,17 @@ Listen 80
 EOL
 
 sudo tee /var/www/index.php tee >/dev/null <<EOL
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Apache2 WebServer</title>
-  </head>
-  <body>
-    <h1>Success</h1>
-    <p>This file is reachable.</p>
-	<p>PHP Status:<b>
-	<?php
-    echo "OK";
-    ?></b>
-	</p>
-  </body>
-</html>
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>Apache2 WebServer</title>
+    </head>
+    <body>
+     <h1>Apache2 WebServer</h1>
+      <p>This file is reachable.</p>
+          <p>PHP Status: <b><?php echo phpversion(); ?></b></p>
+    </body>
+  </html>
 EOL
     echo "Created new default config file."
     sudo chown -R www-data:www-data /var/www/
@@ -184,6 +183,33 @@ EOL
   unset choice
 
 }
+
+install_nginx() {
+  if [ "$EUID" -ne 0 ]; then
+	  echo "You need to be root."
+	return
+  fi
+
+  sudo apt install -y nginx
+  
+sudo tee /var/www/index.php tee >/dev/null <<EOL
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>NGINX WebServer</title>
+    </head>
+    <body>
+     <h1>NGINX WebServer</h1>
+      <p>This file is reachable.</p>
+          <p>PHP Status: <b><?php echo phpversion(); ?></b></p>
+    </body>
+  </html>
+EOL
+
+  sudo systemctl start nginx
+  sudo systemctl enable nginx
+}
+
 
 install_php() {
   if [ "$EUID" -ne 0 ]; then
@@ -553,9 +579,11 @@ pushd() {
 
 tree() {
 	if [ $# -eq 0 ]; then
-		command tree -L 1 --dirsfirst
-	else
-		command tree "$@"
+		command tree -L 1 --dirsfirst -d --noreport
+	elif [ $# -eq 1 ]; then
+		command tree -L $1 --dirsfirst -d --noreport
+    else
+        command tree "$@" 
 	fi
 }
 
