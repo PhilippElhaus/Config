@@ -73,6 +73,8 @@ alias cls='clear -x'
 alias nano='nano --linenumbers'
 alias list='dpkg --get-selections | grep -i'
 alias hex='xxd'
+alias dc='cd'
+alias st='status'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 alias nameserver="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
@@ -82,6 +84,56 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
+	# Helper Functions
+
+colorize_errors() {
+	while IFS= read -r line; do
+		echo -e "\e[93m$line\e[0m" >&2
+	done
+}
+
+check_repository() {
+	local repo="$1"
+	if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+cleanup() {
+  if [ "$EUID" -ne 0 ]; then
+    echo "You need to be root."
+    return
+  fi
+  apt autoremove
+  dpkg --get-selections | grep -E 'deinstall$' | cut -f 1 | while read -r package; do dpkg --purge "$package" 2>/dev/null; done
+  dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
+  echo "Done."
+}
+
+remove() {
+  if [ "$#" -eq 0 ]; then
+    echo "Usage: remove <package1> [<package2> <package3> ...]"
+    return 1
+  fi
+
+  if [ "$EUID" -ne 0 ]; then
+    echo "You need to be root."
+    return
+  fi
+
+    local choice
+  read -p "Wipe the package(s) and anything related (Y/N): " choice
+  if [ "${choice^^}" = "Y" ]; then
+
+    sudo apt remove -y "$@" 2>/dev/null && sudo apt autoremove || echo "No such package.";
+    sudo dpkg --get-selections | grep -E 'deinstall$' | cut -f 1 | while read -r package; do dpkg --purge "$package" 2>/dev/null; done
+    sudo dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
+
+  fi
+}
+
 	# Default Software Installs
 
 install_apache() {
@@ -89,9 +141,9 @@ install_apache() {
 	echo "You need to be root."
 	return
   fi
-
+  local choice
   read -p "Will overwrite any existing installation. Do you want to proceed? (Y/N): " choice
-  if [ "$choice" = "Y" ] || [ "$choice" = "y" ]; then
+  if [ "${choice^^}" = "Y" ]; then
 
     sudo apt -y install apache2 libapache2-mod-{php,security2,fcgid}
 
@@ -101,7 +153,7 @@ install_apache() {
     sudo rm -f /etc/apache2/apache2.conf
     sudo rm -rf /etc/apache2/sites-available
     sudo rm -rf /etc/apache2/sites-enabled
-    sudo rm -r /var/www/*
+    sudo rm -rf /var/www/*
     echo "Deleted initial config files..."
 
 sudo tee /etc/apache2/apache2.conf >/dev/null <<EOL
@@ -179,9 +231,6 @@ EOL
     sudo systemctl restart apache2
     echo -e "\e[91m--- Done ---\e[0m"
   fi
-
-  unset choice
-
 }
 
 install_nginx() {
@@ -190,9 +239,83 @@ install_nginx() {
 	return
   fi
 
+  local choice
+  read -p "Will overwrite any existing installation. Do you want to proceed? (Y/N): " choice
+  if [ "${choice^^}" = "Y" ]; then
+
   sudo apt install -y nginx
-  
-sudo tee /var/www/index.php tee >/dev/null <<EOL
+
+  rm -rf /etc/nginx/conf.d/
+  rm /etc/nginx/nginx.conf
+  sudo rm -rf /var/www/*
+  mkdir -p /var/www
+
+  echo "Deleted initial config files..."
+
+  local installed_version=$(php -v 2>/dev/null | grep -oP '(PHP )\K[0-9]+\.[0-9]+' 2>/dev/null)
+
+sudo tee /etc/nginx/nginx.conf >/dev/null <<EOL
+user www-data;
+worker_processes auto;
+
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    include fastcgi_params;
+    default_type application/octet-stream;
+
+    log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                    '\$status \$body_bytes_sent "\$http_referer" '
+                    '"\$http_user_agent" "\$http_x_forwarded_for"';
+
+    error_log /var/log/nginx/error.critical.log crit;
+    error_log /var/log/nginx/error.log notice;
+ 
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    tcp_nopush on;
+    keepalive_timeout 65;
+    gzip on;
+
+    server {
+        listen 80;
+        server_name localhost;
+    
+        location / {
+            root /var/www/;
+            index index.php;
+        }
+EOL
+
+if [ -n "$installed_version" ]; then
+    echo "        location ~ \.php$ {" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            include fastcgi_params;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_pass unix:/run/php/php$installed_version-fpm.sock;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_index index.php;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_split_path_info ^(.+\.php)(/.+)$;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_intercept_errors on;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_buffers 8 16k;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "            fastcgi_buffer_size 32k;" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+    echo "        }" | sudo tee -a /etc/nginx/nginx.conf >/dev/null
+fi
+
+sudo tee -a /etc/nginx/nginx.conf >/dev/null <<EOL
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+}
+EOL
+
+sudo tee /var/www/index.php >/dev/null <<EOL
   <!DOCTYPE html>
   <html>
     <head>
@@ -206,10 +329,15 @@ sudo tee /var/www/index.php tee >/dev/null <<EOL
   </html>
 EOL
 
+  echo "Created new default config file."
+  sudo chown -R www-data:www-data /var/www/
+  sudo chmod -R 755 /var/www/
+
   sudo systemctl start nginx
   sudo systemctl enable nginx
+  echo -e "\e[91m--- Done ---\e[0m"
+  fi
 }
-
 
 install_php() {
   if [ "$EUID" -ne 0 ]; then
@@ -219,6 +347,9 @@ install_php() {
     sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common
     sudo phpenmod curl zip bz2 gd imagick intl apcu memcache imap mysql cas ldap tidy pear xmlrpc pspell mbstring json gd xml xsl
     sudo systemctl restart apache2
+
+    version=$(php -v | head -n 1 | cut -d " " -f 1,2,3)
+    echo -e "\e[32m$version\e[0m"
 }
 
 install_mysql() {
@@ -268,33 +399,6 @@ install_ftp() {
   sudo systemctl restart vsftpd
 }
 
-	# Helper Functions
-
-colorize_errors() {
-	while IFS= read -r line; do
-		echo -e "\e[93m$line\e[0m" >&2
-	done
-}
-
-check_repository() {
-	local repo="$1"
-	if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-cleanup() {
-  if [ "$EUID" -ne 0 ]; then
-    echo "You need to be root."
-    return
-  fi
-  apt autoremove
-  dpkg --get-selections | grep -E 'deinstall$' | cut -f 1 | while read -r package; do dpkg --purge "$package" 2>/dev/null; done
-  dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
-  echo "Done."
-}
 	# Full System Upgrade
 
 upgrade() {
@@ -314,8 +418,11 @@ upgrade() {
   
 {
 
+  # Basic Ubuntu Settings
+
   timedatectl set-timezone CET
-  
+  sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+
 	#Temporary MTU @ 500
 
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
@@ -500,6 +607,24 @@ status() {
   echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
   service "$1" status
 }
+
+restart() {
+    if [ -z "$1" ]; then
+        echo "Usage: restart <service-name>"
+    else
+
+    if [ "$EUID" -ne 0 ]; then
+	      echo "You need to be root."
+	  return
+    
+    if service --status-all | grep -Fq "$1"; then
+            service "$1" restart
+    else
+       echo "Service $1 does not exist."
+    fi
+    fi
+}
+
 
 proc() {
 	if [ $# -ne 1 ]; then
