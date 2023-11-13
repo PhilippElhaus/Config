@@ -247,7 +247,8 @@ install_nginx() {
   read -p "Will overwrite any existing installation. Do you want to proceed? (Y/N): " choice
   if [ "${choice^^}" = "Y" ]; then
 
-  sudo apt install -y nginx
+  export DEBIAN_FRONTEND=noninteractive
+  sudo apt install -y -o Dpkg::Options::="--force-confnew" nginx
 
   rm -rf /etc/nginx/conf.d/
   rm /etc/nginx/nginx.conf
@@ -354,7 +355,14 @@ install_php() {
   fi
     sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common
     sudo phpenmod curl zip bz2 gd imagick intl apcu memcache imap mysql cas ldap tidy pear xmlrpc pspell mbstring json gd xml xsl
-    sudo systemctl restart apache2
+    
+    if systemctl is-active --quiet apache2; then
+        echo "Restarting Apache2..."
+        sudo systemctl restart apache2 && echo "Apache2 restarted successfully."
+    elif systemctl is-active --quiet nginx; then
+        echo "Restarting NGINX..."
+        sudo systemctl restart nginx && echo "NGINX restarted successfully."
+    fi
 
     version=$(php -v | head -n 1 | cut -d " " -f 1,2,3)
     echo -e "\e[32m$version\e[0m"
