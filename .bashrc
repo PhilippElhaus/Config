@@ -539,8 +539,6 @@ upgrade() {
 	# Update and spread latest .bashrc
 
   sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
-  source ~/.bashrc
-
   local root_bashrc="/root/.bashrc"
   
   if [ -f "$root_bashrc" ]; then
@@ -551,6 +549,8 @@ upgrade() {
 		fi
 	  done
   fi
+
+  source ~/.bashrc
 
   # Display Version
 
