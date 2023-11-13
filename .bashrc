@@ -611,20 +611,15 @@ status() {
 restart() {
     if [ -z "$1" ]; then
         echo "Usage: restart <service-name>"
+    elif [ "$EUID" -ne 0 ]; then
+        echo "You need to be root."
+        return
+    elif service --status-all | grep -Fq "$1"; then
+        service "$1" restart
     else
-
-    if [ "$EUID" -ne 0 ]; then
-	      echo "You need to be root."
-	  return
-    
-    if service --status-all | grep -Fq "$1"; then
-            service "$1" restart
-    else
-       echo "Service $1 does not exist."
-    fi
+        echo "Service $1 does not exist."
     fi
 }
-
 
 proc() {
 	if [ $# -ne 1 ]; then
