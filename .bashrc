@@ -512,7 +512,7 @@ upgrade() {
   export DEBIAN_FRONTEND=noninteractive
 
   local packages_to_install=()
-  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip; do
+  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq; do
 	  if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
 		  packages_to_install+=("$package")
 	  fi
@@ -551,6 +551,27 @@ upgrade() {
 		fi
 	  done
   fi
+
+  # Display Version
+
+  local data=$(curl -s "https://api.github.com/repos/PhilippElhaus/Config/commits?path=.bashrc")
+  local commit_hash=$(echo $data | jq -r '.[0].sha' | cut -c 1-7)
+  local now=$(date +%s)
+  local commit_time=$(date -d "$(echo $data | jq -r '.[0].commit.committer.date')" +%s)
+  local diff=$((now - commit_time))
+  local time_ago=""
+
+  if [ $diff -lt 60 ]; then
+      time_ago="$diff seconds ago"
+  elif [ $diff -lt 3600 ]; then
+      time_ago=$((diff / 60))" minutes ago"
+  elif [ $diff -lt 86400 ]; then
+      time_ago=$((diff / 3600))" hours ago"
+  else
+      time_ago=$((diff / 86400))" days ago"
+  fi
+
+  echo -e ".bashrc Commit: [\033[0;32m$commit_hash\033[0m] ($time_ago)"
 
 	# Reset MTU to 1500
 
