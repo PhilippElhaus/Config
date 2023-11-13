@@ -229,6 +229,10 @@ EOL
     sudo chmod -R 755 /var/www/
     sudo a2enmod rewrite ssl headers
     sudo systemctl restart apache2
+
+    local ip_webserver=$(ip -4 addr show $(ip route | grep default | awk '{print $5}' | head -n 1) | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+    echo -e "Webserver @ \033[0;31mhttp://$ip_webserver:80\033[0m"
+
     echo -e "\e[91m--- Done ---\e[0m"
   fi
 }
@@ -284,11 +288,11 @@ http {
     gzip on;
 
     server {
-        listen 80;
+        listen 8080;
         server_name localhost;
-    
+        root /var/www/;
+
         location / {
-            root /var/www/;
             index index.php;
         }
 EOL
@@ -335,6 +339,10 @@ EOL
 
   sudo systemctl start nginx
   sudo systemctl enable nginx
+
+  local ip_webserver=$(ip -4 addr show $(ip route | grep default | awk '{print $5}' | head -n 1) | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+  echo -e "Webserver @ \033[0;31mhttp://$ip_webserver:8080\033[0m"
+
   echo -e "\e[91m--- Done ---\e[0m"
   fi
 }
