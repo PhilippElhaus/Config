@@ -573,7 +573,7 @@ upgrade() {
   autoremove_out=$(sudo apt-get -s autoremove)
   
   if echo "$upgrade_out" | grep -q 'upgraded [1-9]\+'; then
-      sudo apt-get -y upgrade
+      sudo apt-get -y full-upgrade
   fi
   
   sudo apt-get autoclean
@@ -755,9 +755,21 @@ ports() {
 }
 
 search() {
-		echo "Searching..."
-		find / -iname "$1" 2> /dev/null
-		echo "Search done."
+    echo "Searching..."
+    find / -iname "$1" 2>/dev/null | while read -r f; do
+        if [ -d "$f" ]; then
+            printf "D:\033[34m%s\033[0m\n" "$f"
+        elif [ -x "$f" ] && [ ! -d "$f" ]; then
+            printf "E:\033[92m%s\033[0m\n" "$f"
+        elif [ -f "$f" ]; then
+            printf "F:%s\n" "$f"
+        elif [ -L "$f" ]; then
+            printf "L:\033[94m%s\033[0m\n" "$f"
+        else
+            printf "O:\033[33m%s\033[0m\n" "$f"
+        fi
+    done | sort -t: -k1,1 -k2 | sed 's/^[DEFLFO]://'
+    echo "Search done."
 }
 
 users() {
