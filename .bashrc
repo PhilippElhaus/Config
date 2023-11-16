@@ -431,23 +431,26 @@ install_postgresql() {
   echo "PostgreSQL installed. Database, user, and password created."
 }
 
-
 install_ftp() {
-  if [ "$EUID" -ne 0 ]; then
-	echo "You need to be root."
-	return
-  fi
-  sudo apt update
-  sudo apt install -y vsftpd
+    if [ "$EUID" -ne 0 ]; then
+        echo "You need to be root."
+        return
+    fi
 
-  sudo systemctl start vsftpd
-  sudo systemctl enable vsftpd
+    sudo apt install -y vsftpd
 
-  if command -v ufw &> /dev/null; then
-  	sudo ufw allow 21/tcp
-  fi
+    sudo systemctl start vsftpd
+    sudo systemctl enable vsftpd
 
-  sudo systemctl restart vsftpd
+    if command -v ufw &> /dev/null; then
+        sudo ufw allow 21/tcp
+    fi
+
+    local configFile="/etc/vsftpd.conf"
+    sudo sed -i 's/^listen=.*$/listen=YES/' "$configFile"
+    sudo sed -i 's/^listen_ipv6=.*$/listen_ipv6=NO/' "$configFile"
+
+    sudo systemctl restart vsftpd
 }
 
 	# Full System Upgrade
@@ -755,6 +758,17 @@ search() {
 		echo "Searching..."
 		find / -iname "$1" 2> /dev/null
 		echo "Search done."
+}
+
+users() {
+    if [[ "$1" == "?" ]]; then
+        cut -d: -f1 /etc/passwd | sort
+        echo "--- Active ---"
+        { who | awk '{print $1}'; [ "$(whoami)" = "root" ] && echo "root"; } | sort | uniq | tr '\n' ' '
+        echo
+    else
+        /usr/bin/users "$@"
+    fi
 }
 
 # Shorthand
