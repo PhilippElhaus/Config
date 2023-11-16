@@ -75,6 +75,7 @@ alias list='dpkg --get-selections | grep -i'
 alias hex='xxd'
 alias dc='cd'
 alias st='status'
+alias hi='history'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 alias nameserver="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
