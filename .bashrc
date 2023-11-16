@@ -211,19 +211,23 @@ Listen 80
 </FilesMatch>
 EOL
 
-sudo tee /var/www/index.php tee >/dev/null <<EOL
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Apache2 WebServer</title>
-    </head>
-    <body>
-     <h1>Apache2 WebServer</h1>
-      <p>This file is reachable.</p>
-          <p>PHP Status: <b><?php echo phpversion(); ?></b></p>
-    </body>
-  </html>
+sudo tee /var/www/index.php >/dev/null <<EOL
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>APACHE2 WebServer</title>
+    <style>
+      .green { color: green; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>APACHE2 WebServer</h1>
+    <p>This file is reachable.</p>
+    <p>PHP Status: <b class="green"><?php echo phpversion(); ?></b></p>
+  </body>
+</html>
 EOL
+
     echo "Created new default config file."
     sudo chown -R www-data:www-data /var/www/
     sudo chmod -R 755 /var/www/
@@ -321,17 +325,20 @@ sudo tee -a /etc/nginx/nginx.conf >/dev/null <<EOL
 EOL
 
 sudo tee /var/www/index.php >/dev/null <<EOL
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>NGINX WebServer</title>
-    </head>
-    <body>
-     <h1>NGINX WebServer</h1>
-      <p>This file is reachable.</p>
-          <p>PHP Status: <b><?php echo phpversion(); ?></b></p>
-    </body>
-  </html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NGINX WebServer</title>
+    <style>
+      .green { color: green; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>NGINX WebServer</h1>
+    <p>This file is reachable.</p>
+    <p>PHP Status: <b class="green"><?php echo phpversion(); ?></b></p>
+  </body>
+</html>
 EOL
 
   echo "Created new default config file."
@@ -353,7 +360,7 @@ install_php() {
 	echo "You need to be root."
 	return
   fi
-    sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.1-xsl php8.1-common
+    sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.2-xsl php8.2-common
     sudo phpenmod curl zip bz2 gd imagick intl apcu memcache imap mysql cas ldap tidy pear xmlrpc pspell mbstring json gd xml xsl
     
     if systemctl is-active --quiet apache2; then
@@ -396,6 +403,34 @@ install_mysql() {
 EOF
   echo "MySQL installed. Database, user, and password created."
 }
+
+install_postgresql() {
+  if [ "$EUID" -ne 0 ]; then
+    echo "You need to be root."
+    return
+  fi
+
+  if [ "$#" -ne 3 ]; then
+    echo "Database (1), Username (2), and Password (3) are required as arguments."
+    return
+  fi
+
+  local initial_db_name="$1"
+  local new_user="$2"
+  local password="$3"
+
+  sudo apt update
+  sudo apt -y install postgresql postgresql-contrib
+  sudo systemctl start postgresql
+  sudo systemctl enable postgresql
+
+  sudo -u postgres psql -c "CREATE DATABASE $initial_db_name;"
+  sudo -u postgres psql -c "CREATE USER $new_user WITH ENCRYPTED PASSWORD '$password';"
+  sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $initial_db_name TO $new_user;"
+
+  echo "PostgreSQL installed. Database, user, and password created."
+}
+
 
 install_ftp() {
   if [ "$EUID" -ne 0 ]; then
@@ -630,31 +665,53 @@ services() {
 
 status() {
   if [ -z "$1" ]; then
-	echo "Usage: status <SERVICENAME>"
-	return 1
+    echo "Usage: status <SERVICENAME>"
+    return 1
   fi
 
-  if ! systemctl list-units --type service --all | awk '{print $1}' | grep -q "\<$1\>"; then
-	echo "Service $1 does not exist."
-	return 1
+  local serviceName="$1"
+  local processName="$1"
+
+  case "$serviceName" in
+    postgresql)
+      processName="postgre"
+      ;;
+  esac
+
+  if ! systemctl list-units --type service --all | awk '{print $1}' | grep -q "\<$serviceName\>"; then
+    echo "Service $serviceName does not exist."
+    return 1
   fi
 
   echo -e "\e[31m---\e[0m Ports \e[31m---\e[0m"
-  netstat -tulnp | grep "$1" | awk '{sub(/.*:/,"",$4); print $1 " " $4}'
+  netstat -tulnp | grep "$processName" | awk '{sub(/.*:/,"",$4); print $1 " " $4}'
   echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
-  service "$1" status
+  service "$serviceName" status
 }
 
 restart() {
     if [ -z "$1" ]; then
         echo "Usage: restart <service-name>"
-    elif [ "$EUID" -ne 0 ]; then
+        return
+    fi
+
+    if [ "$EUID" -ne 0 ]; then
         echo "You need to be root."
         return
-    elif service --status-all | grep -Fq "$1"; then
-        service "$1" restart
+    fi
+
+    local serviceName
+    serviceName="$(tr '[:lower:]' '[:upper:]' <<< "${1:0:1}")${1:1}"
+
+    if ! service --status-all 2>/dev/null | grep -Fq "$1"; then
+        echo "Service $serviceName does not exist."
+        return
+    fi
+
+    if service "$1" restart > /dev/null 2>&1; then
+        echo -e "\e[32mSuccess: $serviceName\e[0m"
     else
-        echo "Service $1 does not exist."
+        echo -e "\e[31mFailure: $serviceName\e[0m"
     fi
 }
 
