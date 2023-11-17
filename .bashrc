@@ -667,6 +667,30 @@ services() {
 	echo -e "$plus_lines\n---\n$minus_lines"
 }
 
+services ()
+{
+    local sysv_services;
+    local sysv_up_services;
+    local sysv_down_services;
+    local systemctl_services_up;
+
+    local combined_up;
+    local sorted_up;
+    local filtered_up;
+
+    systemctl_services_up=$(systemctl list-units --type=service --state=running --no-pager --plain --quiet | awk '{gsub(".service$", "", $1); print " [ + ]  " $1}');
+
+    sysv_services=$(service --status-all);
+    sysv_up_services=$(echo "$sysv_services" | grep " \[ + \]");
+    sysv_down_services=$(echo "$sysv_services" | grep " \[ - \]");
+    
+    combined_up="$sysv_up_services\n$systemctl_services_up\n";
+    sorted_up=$(echo -e "$combined_up" | tr '\n' '\0' | sort -z | tr '\0' '\n')
+    filtered_up=$(echo -e "$sorted_up" | uniq);
+    
+    echo -e "$filtered_up\n---\n$sysv_down_services\n"
+}
+
 status() {
   if [ -z "$1" ]; then
     echo "Usage: status <SERVICENAME>"
@@ -818,6 +842,14 @@ pushd() {
 	fi
 }
 
+netstat() {
+	if [ $# -eq 0 ]; then
+		command netstat -tulnp
+	else
+		command netstat "$@"
+	fi
+}
+
 tree() {
 	if [ $# -eq 0 ]; then
 		command tree -L 1 --dirsfirst -d --noreport
@@ -827,6 +859,8 @@ tree() {
         command tree "$@" 
 	fi
 }
+
+
 
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
