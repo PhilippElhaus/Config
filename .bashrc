@@ -655,18 +655,6 @@ EOL
 
 # Usability
 
-services() {
-	local service_output
-	local plus_lines
-	local minus_lines
-
-	service_output=$(service --status-all)
-	plus_lines=$(echo "$service_output" | grep " \[ + \]")
-	minus_lines=$(echo "$service_output" | grep " \[ - \]")
-
-	echo -e "$plus_lines\n---\n$minus_lines"
-}
-
 services ()
 {
     local sysv_services;
@@ -687,7 +675,7 @@ services ()
     combined_up="$sysv_up_services\n$systemctl_services_up\n";
     sorted_up=$(echo -e "$combined_up" | tr '\n' '\0' | sort -z | tr '\0' '\n')
     filtered_up=$(echo -e "$sorted_up" | uniq);
-    
+
     echo -e "$filtered_up\n---\n$sysv_down_services\n"
 }
 
@@ -844,7 +832,7 @@ pushd() {
 
 netstat() {
 	if [ $# -eq 0 ]; then
-		command netstat -tulnp
+		command netstat -tulnp4
 	else
 		command netstat "$@"
 	fi
