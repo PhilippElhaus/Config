@@ -458,9 +458,10 @@ install_ftp() {
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
-	echo "upgrade               # executes the script"
-	echo "upgrade arg1          # additional change to hostname in welcome text"
-	echo "upgrade arg1 arg2     # additional change to the actual hostname"
+	echo "upgrade                       # executes the script"
+	echo "upgrade --hostname <string>   # change to hostname"
+	echo "upgrade --welcome <string>    # change actual hostname"
+	echo "upgrade -6                    # disables IPV6"
 	return
   fi
 
@@ -468,6 +469,9 @@ upgrade() {
 	echo "You need to be root."
 	return
   fi
+
+  read -p "Confirm Upgrade (Y/N): " yn
+  [[ "$yn" =~ ^[Yy](es)?$ ]] || return 1
 
   echo -e "\e[91m--- Upgrading System ---\e[0m"
   
@@ -487,33 +491,39 @@ upgrade() {
 	fi
   done
 
-	# Shutdown IPV6
+  for arg in "$@"; do
+    if [ "$arg" = "-6" ]; then
 
-  sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
-  sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
-  sudo sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
+	      # Shutdown IPV6
+      
+        sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
+        sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
+        sudo sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
+      
+        sudo sysctl -p
+      
+	      # Disable IPV6 Permanent
+      
+        if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
+	      sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+	      echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
+      
+        if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
+	      sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+	      echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
+      
+        if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
+	      sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+	      echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
 
-  sudo sysctl -p
-
-	# Disable IPV6 Permanent
-
-  if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
-	sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
-  else
-	echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-  fi
-
-  if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
-	sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
-  else
-	echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-  fi
-
-  if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
-	sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
-  else
-	echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-  fi
+      fi
+  done
 
 	# Import Public Keys for 3rd Party Repos
 
@@ -628,19 +638,29 @@ upgrade() {
 	fi
   done
 
-	# Optional MOTD and Hostname Change
+	# MOTD and Hostname Change
 
-  if [ -n "$1" ]; then
-	if [ -n "$2" ]; then
-	  new_hostname="$2"
-	  sudo sh -c "echo '$new_hostname' > /etc/hostname"
-	  sudo sed -i "s/127.0.1.1.*/127.0.1.1 $new_hostname/" /etc/hosts
-	fi
+  for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+    hostname="${!((i+1))}"
+
+    if [ "$arg" == "--hostname" ] && [ -n "$hostname" ]; then
+	    sudo sh -c "echo '$hostname' > /etc/hostname"
+	    sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
+      break
+    fi
+  done
+
+  for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+    welcome="${!((i+1))}"
+
+    if [ "$arg" == "--welcome" ] && [ -n "$welcome" ]; then
 
 	sudo rm -f /etc/update-motd.d/*
 	sudo tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
-echo -e "\n  \e[1;31m---  $1  ---\e[0m\n"
+echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
 echo -e " " \$(lsb_release -s -d);
 echo -e " ";
 echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
@@ -655,7 +675,10 @@ echo -e " "
 EOL
 	sudo chmod +x /etc/update-motd.d/99-custom-motd
 	sudo run-parts /etc/update-motd.d/
-  fi
+
+      break
+    fi
+  done
   
 } 2> >(colorize_errors)
   echo -e "\e[91m---  Upgrade Complete ---\e[0m"
