@@ -641,9 +641,16 @@ upgrade() {
 	sudo tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $1  ---\e[0m\n"
-echo -e " " $(lsb_release -s -d);
-/usr/share/landscape/landscape-sysinfo.wrapper* 2> /dev/null;
+echo -e " " \$(lsb_release -s -d);
+echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Users logged in:/d; /^  Processes:/d; /^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
 echo -e " ";
+echo -e "  \e[1;31m---  Commands  ---\e[0m\n"
+echo -e "  search <file>"
+echo -e "  ips\t| netstat\t| users"
+echo -e "  ns\t| gw\t\t| services"
+echo -e "  dir\t| tree\t\t| status <service>"
+echo -e "  ports\t| proc\t\t| restart <service>"
+echo -e " "
 EOL
 	sudo chmod +x /etc/update-motd.d/99-custom-motd
 	sudo run-parts /etc/update-motd.d/
@@ -681,7 +688,7 @@ services ()
 
 status() {
   if [ -z "$1" ]; then
-    echo "Usage: status <SERVICENAME>"
+    echo "Usage: status <service_name>"
     return 1
   fi
 
@@ -768,6 +775,11 @@ ports() {
 }
 
 search() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: search <file_name>"
+        return 1
+    fi
+
     echo "Searching..."
     find / -iname "$1" 2>/dev/null | while read -r f; do
         if [ -d "$f" ]; then
@@ -847,8 +859,6 @@ tree() {
         command tree "$@" 
 	fi
 }
-
-
 
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
