@@ -642,23 +642,26 @@ upgrade() {
 
   for ((i=1; i<=$#; i++)); do
     arg="${!i}"
-    hostname="${!((i+1))}"
-
-    if [ "$arg" == "--hostname" ] && [ -n "$hostname" ]; then
-	    sudo sh -c "echo '$hostname' > /etc/hostname"
-	    sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
-      break
+    if [ "$arg" == "--hostname" ]; then
+      ((i++))
+      hostname="${!i}"
+          if [ -n "$hostname" ]; then
+            	    sudo sh -c "echo '$hostname' > /etc/hostname"
+  	              sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
+                  break
+          fi
     fi
   done
 
   for ((i=1; i<=$#; i++)); do
     arg="${!i}"
-    welcome="${!((i+1))}"
 
-    if [ "$arg" == "--welcome" ] && [ -n "$welcome" ]; then
-
-	sudo rm -f /etc/update-motd.d/*
-	sudo tee /etc/update-motd.d/99-custom-motd <<EOL
+    if [ "$arg" == "--welcome" ]; then
+      ((i++)) 
+      welcome="${!i}"
+          if [ -n "$welcome" ]; then
+  	sudo rm -f /etc/update-motd.d/*
+  	sudo tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
 echo -e " " \$(lsb_release -s -d);
@@ -673,10 +676,10 @@ echo -e "  dir\t| tree\t\t| status <service>"
 echo -e "  ports\t| proc\t\t| restart <service>"
 echo -e " "
 EOL
-	sudo chmod +x /etc/update-motd.d/99-custom-motd
-	sudo run-parts /etc/update-motd.d/
-
-      break
+  	sudo chmod +x /etc/update-motd.d/99-custom-motd
+  	sudo run-parts /etc/update-motd.d/
+                  break
+          fi
     fi
   done
   
