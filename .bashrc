@@ -642,7 +642,8 @@ upgrade() {
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $1  ---\e[0m\n"
 echo -e " " \$(lsb_release -s -d);
-echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Users logged in:/d; /^  Processes:/d; /^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
+echo -e " ";
+echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
 echo -e " ";
 echo -e "  \e[1;31m---  Commands  ---\e[0m\n"
 echo -e "  search <file>"
