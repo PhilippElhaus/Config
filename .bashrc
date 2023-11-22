@@ -595,7 +595,7 @@ upgrade() {
   
 	# Update and spread latest .bashrc
 
-  sudo curl -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
+  sudo curl --no-cache -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
   local root_bashrc="/root/.bashrc"
   
   if [ -f "$root_bashrc" ]; then
@@ -611,7 +611,7 @@ upgrade() {
 
   # Display Version
 
-  local data=$(curl -s "https://api.github.com/repos/PhilippElhaus/Config/commits?path=.bashrc")
+  local data=$(curl --no-cache -s "https://api.github.com/repos/PhilippElhaus/Config/commits?path=.bashrc")
   local commit_hash=$(echo $data | jq -r '.[0].sha' | cut -c 1-7)
   local now=$(date +%s)
   local commit_time=$(date -d "$(echo $data | jq -r '.[0].commit.committer.date')" +%s)
