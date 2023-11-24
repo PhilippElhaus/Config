@@ -569,29 +569,24 @@ upgrade() {
   export DEBIAN_FRONTEND=noninteractive
 
   local packages_to_install=()
-  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq; do
+  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq nala; do
 	  if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
 		  packages_to_install+=("$package")
 	  fi
-  done  
-  if [ ${#packages_to_install[@]} -gt 0 ]; then
-	  sudo apt-get -y install "${packages_to_install[@]}"
+  done
+
+  if ! dpkg -l | grep -q "nala"; then
+	    sudo apt-get -y install "nala"
   fi
 
-  sudo apt-get update
+  sudo yes | nala update;
   
-  upgrade_out=$(sudo apt-get -s upgrade)
-  autoremove_out=$(sudo apt-get -s autoremove)
-  
-  if echo "$upgrade_out" | grep -q 'upgraded [1-9]\+'; then
-      sudo apt-get -y full-upgrade
+  if [ ${#packages_to_install[@]} -gt 0 ]; then
+	  sudo yes | nala install "${packages_to_install[@]}"
   fi
   
-  sudo apt-get autoclean
-  
-  if echo "$autoremove_out" | grep -q 'to remove [1-9]\+'; then
-      sudo apt-get -y autoremove
-  fi
+  sudo yes | nala upgrade
+  sudo yes | nala autoremove
   
 	# Update and spread latest .bashrc
 
