@@ -577,7 +577,7 @@ upgrade() {
 
   if ! dpkg -l | grep -q "nala"; then
       sudo apt-get -y install "nala"
-      nala fetch -c DE --fetches 5 --auto
+      nala fetch -c DE --fetches 5 --auto --https-only
   fi
   
   if [ ${#packages_to_install[@]} -gt 0 ]; then
