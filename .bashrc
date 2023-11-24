@@ -1,8 +1,8 @@
 # ~/.bashrc [non-login shells]
 
 case $- in
-	*i*) ;;
-	  *) return;;
+  *i*) ;;
+    *) return;;
 esac
 
 # Default
@@ -17,19 +17,19 @@ shopt -s checkwinsize
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-	debian_chroot=$(cat /etc/debian_chroot)
+  debian_chroot=$(cat /etc/debian_chroot)
 fi
 
 case "$TERM" in
-	xterm-color|*-256color) color_prompt=yes;;
+  xterm-color|*-256color) color_prompt=yes;;
 esac
 
 if [ -n "$force_color_prompt" ]; then
-	if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	color_prompt=yes
-	else
-	color_prompt=
-	fi
+  if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+  color_prompt=yes
+  else
+  color_prompt=
+  fi
 fi
 
 unset color_prompt force_color_prompt
@@ -38,14 +38,14 @@ PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\
 # Alias
 
 if [ -x /usr/bin/dircolors ]; then
-	test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-	alias ls='ls --color=auto'
-	alias dir='ls -alhS --color=auto --group-directories-first'
-	alias vdir='vdir --color=auto'
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+  alias dir='ls -alhS --color=auto --group-directories-first'
+  alias vdir='vdir --color=auto'
 
-	alias grep='grep --color=auto'
-	alias fgrep='fgrep --color=auto'
-	alias egrep='egrep --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
 fi
 
 unalias upgrade 2> /dev/null
@@ -85,21 +85,21 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
-	# Helper Functions
+  # Helper Functions
 
 colorize_errors() {
-	while IFS= read -r line; do
-		echo -e "\e[93m$line\e[0m" >&2
-	done
+  while IFS= read -r line; do
+    echo -e "\e[93m$line\e[0m" >&2
+  done
 }
 
 check_repository() {
-	local repo="$1"
-	if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-		return 0
-	else
-		return 1
-	fi
+  local repo="$1"
+  if grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 cleanup() {
@@ -135,12 +135,12 @@ remove() {
   fi
 }
 
-	# Default Software Installs
+  # Default Software Installs
 
 install_apache() {
   if [ "$EUID" -ne 0 ]; then
-	echo "You need to be root."
-	return
+  echo "You need to be root."
+  return
   fi
   local choice
   read -p "Will overwrite any existing installation. Do you want to proceed? (Y/N): " choice
@@ -244,8 +244,8 @@ EOL
 
 install_nginx() {
   if [ "$EUID" -ne 0 ]; then
-	  echo "You need to be root."
-	return
+    echo "You need to be root."
+  return
   fi
 
   local choice
@@ -358,8 +358,8 @@ EOL
 
 install_php() {
   if [ "$EUID" -ne 0 ]; then
-	echo "You need to be root."
-	return
+  echo "You need to be root."
+  return
   fi
     sudo apt -y install php php-{curl,zip,bz2,gd,imagick,intl,apcu,memcache,imap,mysql,cas,ldap,tidy,pear,xmlrpc,pspell,mbstring,json,gd,xml} php8.2-xsl php8.2-common
     sudo phpenmod curl zip bz2 gd imagick intl apcu memcache imap mysql cas ldap tidy pear xmlrpc pspell mbstring json gd xml xsl
@@ -454,20 +454,20 @@ install_ftp() {
     sudo systemctl restart vsftpd
 }
 
-	# Full System Upgrade
+  # Full System Upgrade
 
 upgrade() {
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
-	echo "upgrade                       # executes the script"
-	echo "upgrade --hostname <string>   # change to hostname"
-	echo "upgrade --welcome <string>    # change actual hostname"
-	echo "upgrade -6                    # disables IPV6"
-	return
+  echo "upgrade                       # executes the script"
+  echo "upgrade --hostname <string>   # change to hostname"
+  echo "upgrade --welcome <string>    # change actual hostname"
+  echo "upgrade -6                    # disables IPV6"
+  return
   fi
 
   if [ "$EUID" -ne 0 ]; then
-	echo "You need to be root."
-	return
+  echo "You need to be root."
+  return
   fi
 
   read -p "Confirm Upgrade (Y/N): " yn
@@ -482,19 +482,19 @@ upgrade() {
   timedatectl set-timezone CET
   sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
 
-	#Temporary MTU @ 500
+  #Temporary MTU @ 500
 
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters; do
-	if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-	  sudo ip link set dev "$adapter" mtu 500
-	fi
+  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+    sudo ip link set dev "$adapter" mtu 500
+  fi
   done
 
   for arg in "$@"; do
     if [ "$arg" = "-6" ]; then
 
-	      # Shutdown IPV6
+        # Shutdown IPV6
       
         sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
         sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
@@ -502,30 +502,30 @@ upgrade() {
       
         sudo sysctl -p
       
-	      # Disable IPV6 Permanent
+        # Disable IPV6 Permanent
       
         if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
-	      sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
+        sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
-	      echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
       
         if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
-	      sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
+        sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
-	      echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
       
         if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
-	      sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
+        sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
-	      echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
 
       fi
   done
 
-	# Import Public Keys for 3rd Party Repos
+  # Import Public Keys for 3rd Party Repos
 
   keys=("ABF5BD827BD9BF62" "7FCC7D46ACCC4CF8" "467B942D3A79BD29")
   descriptions=("nginx" "postgre" "mysql")
@@ -542,63 +542,63 @@ upgrade() {
     fi
   done
 
-	# Add Additional Repos
+  # Add Additional Repos
 
   if ! check_repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"; then
-	  sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
+    sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
   fi
   
   if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
-	  sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+    sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
   fi
   
   if ! check_repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"; then
-	  sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
+    sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
   fi
 
   local repos=("ondrej/php" "ondrej/apache2")
   for repo in "${repos[@]}"; do
-	if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-	  echo "Adding ppa:$repo Repository..."
-	  sudo add-apt-repository -y "ppa:$repo"
-	fi
+  if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+    echo "Adding ppa:$repo Repository..."
+    sudo add-apt-repository -y "ppa:$repo"
+  fi
   done
 
-	# Execute Updates & Install necessities
+  # Execute Updates & Install necessities
 
   export DEBIAN_FRONTEND=noninteractive
 
   local packages_to_install=()
   for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq nala; do
-	  if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
-		  packages_to_install+=("$package")
-	  fi
+    if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
+      packages_to_install+=("$package")
+    fi
   done
 
   if ! dpkg -l | grep -q "nala"; then
-	    sudo apt-get -y install "nala"
-      sudo nala fetch
+      sudo apt-get -y install "nala"
+      nala fetch -c DE --fetches 5 --auto
   fi
   
   if [ ${#packages_to_install[@]} -gt 0 ]; then
-	  sudo yes | nala install "${packages_to_install[@]}"
+    sudo yes | nala install "${packages_to_install[@]}"
   fi
   
   sudo yes | nala upgrade
   sudo yes | nala autoremove
   
-	# Update and spread latest .bashrc
+  # Update and spread latest .bashrc
 
   sudo curl -H "Cache-Control: no-cache" -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
   local root_bashrc="/root/.bashrc"
   
   if [ -f "$root_bashrc" ]; then
-	  for user_home in /home/*; do
-		if [ -d "$user_home" ]; then
-		  user_bashrc="$user_home/.bashrc"
-		  sudo cp "$root_bashrc" "$user_bashrc"
-		fi
-	  done
+    for user_home in /home/*; do
+    if [ -d "$user_home" ]; then
+      user_bashrc="$user_home/.bashrc"
+      sudo cp "$root_bashrc" "$user_bashrc"
+    fi
+    done
   fi
 
   source ~/.bashrc
@@ -624,15 +624,15 @@ upgrade() {
 
   echo -e ".bashrc Commit: [\033[0;32m$commit_hash\033[0m] ($time_ago)"
 
-	# Reset MTU to 1500
+  # Reset MTU to 1500
 
   for adapter in $adapters; do
-	if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-	  sudo ip link set dev "$adapter" mtu 1500
-	fi
+  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+    sudo ip link set dev "$adapter" mtu 1500
+  fi
   done
 
-	# MOTD and Hostname Change
+  # MOTD and Hostname Change
 
   for ((i=1; i<=$#; i++)); do
     arg="${!i}"
@@ -640,8 +640,8 @@ upgrade() {
       ((i++))
       hostname="${!i}"
           if [ -n "$hostname" ]; then
-            	    sudo sh -c "echo '$hostname' > /etc/hostname"
-  	              sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
+                  sudo sh -c "echo '$hostname' > /etc/hostname"
+                  sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
                   break
           fi
     fi
@@ -654,8 +654,8 @@ upgrade() {
       ((i++)) 
       welcome="${!i}"
           if [ -n "$welcome" ]; then
-  	sudo rm -f /etc/update-motd.d/*
-  	sudo tee /etc/update-motd.d/99-custom-motd <<EOL
+    sudo rm -f /etc/update-motd.d/*
+    sudo tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
 echo -e " " \$(lsb_release -s -d);
@@ -670,8 +670,8 @@ echo -e "  dir\t| tree\t\t| status <service>"
 echo -e "  ports\t| proc\t\t| restart <service>"
 echo -e " "
 EOL
-  	sudo chmod +x /etc/update-motd.d/99-custom-motd
-  	sudo run-parts /etc/update-motd.d/
+    sudo chmod +x /etc/update-motd.d/99-custom-motd
+    sudo run-parts /etc/update-motd.d/
                   break
           fi
     fi
@@ -760,39 +760,39 @@ restart() {
 }
 
 proc() {
-	if [ $# -ne 1 ]; then
-		echo "Usage: proc <process_name>"
-		return 1
-	fi
+  if [ $# -ne 1 ]; then
+    echo "Usage: proc <process_name>"
+    return 1
+  fi
 
-	process_name="$1"
-	pids=$(ps aux | grep "$process_name" | grep -v "grep" | awk '{print $2, $11}')
+  process_name="$1"
+  pids=$(ps aux | grep "$process_name" | grep -v "grep" | awk '{print $2, $11}')
 
-	if [ -z "$pids" ]; then
-		echo "No PID's found for $process_name"
-	else
-		echo -e "\e[31m---\e[0m PID's containing '$process_name' \e[31m---\e[0m"
-		echo "$pids"
-		echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
-	fi
+  if [ -z "$pids" ]; then
+    echo "No PID's found for $process_name"
+  else
+    echo -e "\e[31m---\e[0m PID's containing '$process_name' \e[31m---\e[0m"
+    echo "$pids"
+    echo -e "\e[31m---\e[0m End \e[31m---\e[0m "
+  fi
 }
 
 ports() {
-	if [ $# -ne 1 ]; then
-		echo "Usage: ports <process_name>"
-		return 1
-	fi
+  if [ $# -ne 1 ]; then
+    echo "Usage: ports <process_name>"
+    return 1
+  fi
 
-	process_name="$1"
-	pids=$(pgrep "$process_name")
+  process_name="$1"
+  pids=$(pgrep "$process_name")
 
-	if [ -z "$pids" ]; then
-		echo "No processes found for: $process_name"
-	else
-		echo "NAME | PID : TYPE | PROTOCOL | PORT"
-		echo "-----------------------------------"
-		sudo lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
-	fi
+  if [ -z "$pids" ]; then
+    echo "No processes found for: $process_name"
+  else
+    echo "NAME | PID : TYPE | PROTOCOL | PORT"
+    echo "-----------------------------------"
+    sudo lsof -i -P -n -a -p $(echo $pids | tr ' ' ',') | awk 'NR>1{split($9, parts, ":"); printf "%s | %s : %s | %s | %s\n", $1, $2, $5, $8, parts[2]}'
+  fi
 }
 
 search() {
@@ -832,59 +832,59 @@ users() {
 # Shorthand
 
 route() {
-	if [ $# -eq 0 ]; then
-		command route -n
-	else
-		command route "$@"
-	fi
+  if [ $# -eq 0 ]; then
+    command route -n
+  else
+    command route "$@"
+  fi
 }
 
 df() {
-	if [ $# -eq 0 ]; then
-		command df -h
-	else
-		command df "$@"
-	fi
+  if [ $# -eq 0 ]; then
+    command df -h
+  else
+    command df "$@"
+  fi
 }
 
 du() {
-	if [ $# -eq 0 ]; then
-		command du -sh
-	else
-		command du "$@"
-	fi
+  if [ $# -eq 0 ]; then
+    command du -sh
+  else
+    command du "$@"
+  fi
 }
 
 pushd() {
-	if [ $# -eq 0 ]; then
-		command pushd .
-	else
-		command pushd "$@"
-	fi
+  if [ $# -eq 0 ]; then
+    command pushd .
+  else
+    command pushd "$@"
+  fi
 }
 
 netstat() {
-	if [ $# -eq 0 ]; then
-		command netstat -tulnp4
-	else
-		command netstat "$@"
-	fi
+  if [ $# -eq 0 ]; then
+    command netstat -tulnp4
+  else
+    command netstat "$@"
+  fi
 }
 
 tree() {
-	if [ $# -eq 0 ]; then
-		command tree -L 1 --dirsfirst -d --noreport
-	elif [ $# -eq 1 ]; then
-		command tree -L $1 --dirsfirst -d --noreport
+  if [ $# -eq 0 ]; then
+    command tree -L 1 --dirsfirst -d --noreport
+  elif [ $# -eq 1 ]; then
+    command tree -L $1 --dirsfirst -d --noreport
     else
         command tree "$@" 
-	fi
+  fi
 }
 
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
-	. /usr/share/bash-completion/bash_completion
+  . /usr/share/bash-completion/bash_completion
   elif [ -f /etc/bash_completion ]; then
-	. /etc/bash_completion
+  . /etc/bash_completion
   fi
 fi
