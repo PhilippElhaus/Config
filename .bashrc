@@ -579,8 +579,6 @@ upgrade() {
 	    sudo apt-get -y install "nala"
       sudo nala fetch
   fi
-
-  sudo yes | nala update;
   
   if [ ${#packages_to_install[@]} -gt 0 ]; then
 	  sudo yes | nala install "${packages_to_install[@]}"
