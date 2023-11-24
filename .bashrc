@@ -581,11 +581,10 @@ upgrade() {
   fi
   
   if [ ${#packages_to_install[@]} -gt 0 ]; then
-    sudo yes | nala install "${packages_to_install[@]}"
+    nala install "${packages_to_install[@]}" --assume-yes --update --install-recommends
   fi
   
-  sudo yes | nala upgrade
-  sudo yes | nala autoremove
+  nala upgrade --assume-yes --full --autoremove --update --fix-broken --purge
   
   # Update and spread latest .bashrc
 
