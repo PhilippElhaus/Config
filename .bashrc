@@ -577,6 +577,7 @@ upgrade() {
 
   if ! dpkg -l | grep -q "nala"; then
 	    sudo apt-get -y install "nala"
+      sudo nala fetch
   fi
 
   sudo yes | nala update;
