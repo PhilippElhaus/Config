@@ -85,6 +85,10 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
+if [ "$(lsb_release -si)" = "Debian" ]; then
+alias su='su --login'
+fi
+
   # Helper Functions
 
 colorize_errors() {
@@ -457,6 +461,16 @@ install_ftp() {
   # Full System Upgrade
 
 upgrade() {
+
+  if [ -x "$(command -v lsb_release)" ]; then
+    if [ "$(lsb_release -si)" != "Ubuntu" ] && [ "$(lsb_release -si)" != "Debian" ]; then
+        echo "The OS is not Ubuntu or Debian."
+        return 
+    fi
+  else
+    return
+  fi
+
   if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
   echo "upgrade                       # executes the script"
   echo "upgrade --hostname <string>   # change to hostname"
@@ -479,15 +493,17 @@ upgrade() {
 
   # Basic Ubuntu Settings
 
-  timedatectl set-timezone CET
-  sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+  if [ "$(lsb_release -si)" = "Ubuntu" ]; then
+    timedatectl set-timezone CET
+    sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+  fi
 
   #Temporary MTU @ 500
 
   adapters=$(ip -o link show | awk -F': ' '{print $2}')
   for adapter in $adapters; do
   if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-    sudo ip link set dev "$adapter" mtu 500
+    ip link set dev "$adapter" mtu 500
   fi
   done
 
@@ -496,28 +512,28 @@ upgrade() {
 
         # Shutdown IPV6
       
-        sudo sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
-        sudo sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
-        sudo sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
+         sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
+         sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
+         sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
       
-        sudo sysctl -p
+         sysctl -p
       
         # Disable IPV6 Permanent
       
         if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
-        sudo sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
+         sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
         echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
       
         if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
-        sudo sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
+         sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
         echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
       
         if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
-        sudo sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
+         sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
         else
         echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
         fi
@@ -535,32 +551,32 @@ upgrade() {
     description="${descriptions[$i]}"
     gpg_file="/etc/apt/trusted.gpg.d/$description.gpg"
   
-    if ! sudo gpg --list-keys | grep -q "$key"; then
+    if !  gpg --list-keys | grep -q "$key"; then
       echo "Receiving and exporting GPG key for $description..."
-      sudo gpg --keyserver keyserver.ubuntu.com --recv-keys "$key"
-      sudo gpg --export "$key" > "$gpg_file"
+       gpg --keyserver keyserver.ubuntu.com --recv-keys "$key"
+       gpg --export "$key" > "$gpg_file"
     fi
   done
 
   # Add Additional Repos
 
   if ! check_repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"; then
-    sudo add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
+     add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
   fi
   
   if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
-    sudo add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+     add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
   fi
   
   if ! check_repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"; then
-    sudo add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
+     add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
   fi
 
   local repos=("ondrej/php" "ondrej/apache2")
   for repo in "${repos[@]}"; do
   if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
     echo "Adding ppa:$repo Repository..."
-    sudo add-apt-repository -y "ppa:$repo"
+     add-apt-repository -y "ppa:$repo"
   fi
   done
 
@@ -576,7 +592,7 @@ upgrade() {
   done
 
   if ! dpkg -l | grep -q "nala"; then
-      sudo apt-get -y install "nala"
+      apt-get -y install "nala"
       nala fetch -c DE --fetches 5 --auto --https-only
   fi
   
@@ -588,14 +604,14 @@ upgrade() {
   
   # Update and spread latest .bashrc
 
-  sudo curl -H "Cache-Control: no-cache" -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
+   curl -H "Cache-Control: no-cache" -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
   local root_bashrc="/root/.bashrc"
   
   if [ -f "$root_bashrc" ]; then
     for user_home in /home/*; do
     if [ -d "$user_home" ]; then
       user_bashrc="$user_home/.bashrc"
-      sudo cp "$root_bashrc" "$user_bashrc"
+      cp "$root_bashrc" "$user_bashrc"
     fi
     done
   fi
@@ -627,7 +643,7 @@ upgrade() {
 
   for adapter in $adapters; do
   if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-    sudo ip link set dev "$adapter" mtu 1500
+    ip link set dev "$adapter" mtu 1500
   fi
   done
 
@@ -639,8 +655,8 @@ upgrade() {
       ((i++))
       hostname="${!i}"
           if [ -n "$hostname" ]; then
-                  sudo sh -c "echo '$hostname' > /etc/hostname"
-                  sudo sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
+                   sh -c "echo '$hostname' > /etc/hostname"
+                   sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
                   break
           fi
     fi
@@ -653,8 +669,8 @@ upgrade() {
       ((i++)) 
       welcome="${!i}"
           if [ -n "$welcome" ]; then
-    sudo rm -f /etc/update-motd.d/*
-    sudo tee /etc/update-motd.d/99-custom-motd <<EOL
+    rm -f /etc/update-motd.d/*
+    tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
 echo -e " " \$(lsb_release -s -d);
@@ -669,8 +685,8 @@ echo -e "  dir\t| tree\t\t| status <service>"
 echo -e "  ports\t| proc\t\t| restart <service>"
 echo -e " "
 EOL
-    sudo chmod +x /etc/update-motd.d/99-custom-motd
-    sudo run-parts /etc/update-motd.d/
+    chmod +x /etc/update-motd.d/99-custom-motd
+    run-parts /etc/update-motd.d/
                   break
           fi
     fi
