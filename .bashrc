@@ -106,6 +106,13 @@ check_repository() {
   fi
 }
 
+add_repository()
+{
+
+  echo "$1" | sudo tee -a /etc/apt/sources.list > /dev/null
+
+}
+
 cleanup() {
   if [ "$EUID" -ne 0 ]; then
     echo "You need to be root."
@@ -137,6 +144,250 @@ remove() {
     sudo dpkg --purge $(dpkg -l | grep ^rc | awk '{print $2}') 2>/dev/null
 
   fi
+}
+
+# Full System Upgrade
+
+upgrade() {
+
+  if [ -x "$(command -v lsb_release)" ]; then
+    if [ "$(lsb_release -si)" != "Ubuntu" ] && [ "$(lsb_release -si)" != "Debian" ]; then
+        echo "The OS is not Ubuntu or Debian."
+        return 
+    fi
+  else
+    return
+  fi
+
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
+  echo "upgrade                       # executes the script"
+  echo "upgrade --hostname <string>   # change to hostname"
+  echo "upgrade --welcome <string>    # change actual hostname"
+  echo "upgrade -6                    # disables IPV6"
+  return
+  fi
+
+  if [ "$EUID" -ne 0 ]; then
+  echo "You need to be root."
+  return
+  fi
+
+  read -p "Confirm Upgrade (Y/N): " yn
+  [[ "$yn" =~ ^[Yy](es)?$ ]] || return 1
+
+  echo -e "\e[91m--- Upgrading System ---\e[0m"
+  
+{
+
+  # Basic Ubuntu Settings
+
+  if [ "$(lsb_release -si)" = "Ubuntu" ]; then
+    timedatectl set-timezone CET
+    sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+  fi
+
+  #Temporary MTU @ 500
+
+  adapters=$(ip -o link show | awk -F': ' '{print $2}')
+  for adapter in $adapters; do
+  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+    ip link set dev "$adapter" mtu 500
+  fi
+  done
+
+  for arg in "$@"; do
+    if [ "$arg" = "-6" ]; then
+
+        # Shutdown IPV6
+      
+         sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
+         sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
+         sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
+      
+         sysctl -p
+      
+        # Disable IPV6 Permanent
+      
+        if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
+          sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+          echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
+      
+        if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
+          sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+          echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
+      
+        if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
+          sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
+        else
+          echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
+        fi
+
+      fi
+  done
+
+  # Import Public Keys for 3rd Party Repos
+
+  if ! command -v gpg &> /dev/null; then
+    apt-get -y install "gpg"
+  fi
+
+  keys=("ABF5BD827BD9BF62" "7FCC7D46ACCC4CF8" "467B942D3A79BD29")
+  descriptions=("nginx" "postgre" "mysql")
+  
+  for i in "${!keys[@]}"; do
+    key="${keys[$i]}"
+    description="${descriptions[$i]}"
+    gpg_file="/etc/apt/trusted.gpg.d/$description.gpg"
+  
+    if ! gpg --list-keys | grep -q "$key"; then
+      echo "Receiving and exporting GPG key for $description..."
+        gpg --keyserver keyserver.ubuntu.com --recv-keys "$key"
+        gpg --export "$key" > "$gpg_file"
+    fi
+  done
+
+  # Add Additional Repos
+
+  if ! check_repository "deb http://repo.mysql.com/apt/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) mysql-8.0"; then
+     add_repository "deb http://repo.mysql.com/apt/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) mysql-8.0"
+  fi
+  
+  if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
+     add_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
+  fi
+  
+  if ! check_repository "deb http://nginx.org/packages/mainline/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) nginx"; then
+     add_repository "deb http://nginx.org/packages/mainline/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) nginx"
+  fi
+
+  if command -v add-apt-repository &> /dev/null; then
+    local repos=("ondrej/php" "ondrej/apache2")
+    for repo in "${repos[@]}"; do
+      if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+        echo "Adding ppa:$repo Repository..."
+        add-apt-repository -y "ppa:$repo"
+      fi
+    done
+  fi
+
+  # Execute Updates & Install necessities
+
+  export DEBIAN_FRONTEND=noninteractive
+
+  local packages_to_install=()
+  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq nala; do
+    if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
+      packages_to_install+=("$package")
+    fi
+  done
+
+  if ! dpkg -l | grep -q "nala"; then
+      apt-get -y install "nala"
+      nala fetch -c DE --fetches 5 --auto --https-only
+  fi
+  
+  if [ ${#packages_to_install[@]} -gt 0 ]; then
+    nala install "${packages_to_install[@]}" --assume-yes --update --install-recommends
+  fi
+  
+  nala upgrade --assume-yes --full --autoremove --update --fix-broken --purge
+  
+  # Update and spread latest .bashrc
+
+  curl -H "Cache-Control: no-cache" -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
+  local root_bashrc="/root/.bashrc"
+  
+  if [ -f "$root_bashrc" ]; then
+    for user_home in /home/*; do
+    if [ -d "$user_home" ]; then
+      user_bashrc="$user_home/.bashrc"
+      cp "$root_bashrc" "$user_bashrc"
+    fi
+    done
+  fi
+
+  source ~/.bashrc
+
+  # Display Version
+
+  local data=$(curl -H "Cache-Control: no-cache" -s "https://api.github.com/repos/PhilippElhaus/Config/commits?path=.bashrc")
+  local commit_hash=$(echo $data | jq -r '.[0].sha' | cut -c 1-7)
+  local now=$(date +%s)
+  local commit_time=$(date -d "$(echo $data | jq -r '.[0].commit.committer.date')" +%s)
+  local diff=$((now - commit_time))
+  local time_ago=""
+
+  if [ $diff -lt 60 ]; then
+      time_ago="$diff seconds ago"
+  elif [ $diff -lt 3600 ]; then
+      time_ago=$((diff / 60))" minutes ago"
+  elif [ $diff -lt 86400 ]; then
+      time_ago=$((diff / 3600))" hours ago"
+  else
+      time_ago=$((diff / 86400))" days ago"
+  fi
+
+  echo -e ".bashrc Commit: [\033[0;32m$commit_hash\033[0m] ($time_ago)"
+
+  # Reset MTU to 1500
+
+  for adapter in $adapters; do
+  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
+    ip link set dev "$adapter" mtu 1500
+  fi
+  done
+
+  # MOTD and Hostname Change
+
+  for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+    if [ "$arg" == "--hostname" ]; then
+      ((i++))
+      hostname="${!i}"
+          if [ -n "$hostname" ]; then
+                   sh -c "echo '$hostname' > /etc/hostname"
+                   sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
+                  break
+          fi
+    fi
+  done
+
+  for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+
+    if [ "$arg" == "--welcome" ]; then
+      ((i++)) 
+      welcome="${!i}"
+          if [ -n "$welcome" ]; then
+    rm -f /etc/update-motd.d/*
+    tee /etc/update-motd.d/99-custom-motd <<EOL
+#!/bin/bash
+echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
+echo -e " " \$(lsb_release -s -d);
+echo -e " ";
+echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
+echo -e " ";
+echo -e "  \e[1;31m---  Commands  ---\e[0m\n"
+echo -e "  search <file>"
+echo -e "  ips\t| netstat\t| users"
+echo -e "  ns\t| gw\t\t| services"
+echo -e "  dir\t| tree\t\t| status <service>"
+echo -e "  ports\t| proc\t\t| restart <service>"
+echo -e " "
+EOL
+    chmod +x /etc/update-motd.d/99-custom-motd
+    run-parts /etc/update-motd.d/
+                  break
+          fi
+    fi
+  done
+  
+} 2> >(colorize_errors)
+  echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
 
   # Default Software Installs
@@ -456,244 +707,6 @@ install_ftp() {
     sudo sed -i 's/^listen_ipv6=.*$/listen_ipv6=NO/' "$configFile"
 
     sudo systemctl restart vsftpd
-}
-
-  # Full System Upgrade
-
-upgrade() {
-
-  if [ -x "$(command -v lsb_release)" ]; then
-    if [ "$(lsb_release -si)" != "Ubuntu" ] && [ "$(lsb_release -si)" != "Debian" ]; then
-        echo "The OS is not Ubuntu or Debian."
-        return 
-    fi
-  else
-    return
-  fi
-
-  if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "?" ]; then
-  echo "upgrade                       # executes the script"
-  echo "upgrade --hostname <string>   # change to hostname"
-  echo "upgrade --welcome <string>    # change actual hostname"
-  echo "upgrade -6                    # disables IPV6"
-  return
-  fi
-
-  if [ "$EUID" -ne 0 ]; then
-  echo "You need to be root."
-  return
-  fi
-
-  read -p "Confirm Upgrade (Y/N): " yn
-  [[ "$yn" =~ ^[Yy](es)?$ ]] || return 1
-
-  echo -e "\e[91m--- Upgrading System ---\e[0m"
-  
-{
-
-  # Basic Ubuntu Settings
-
-  if [ "$(lsb_release -si)" = "Ubuntu" ]; then
-    timedatectl set-timezone CET
-    sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
-  fi
-
-  #Temporary MTU @ 500
-
-  adapters=$(ip -o link show | awk -F': ' '{print $2}')
-  for adapter in $adapters; do
-  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-    ip link set dev "$adapter" mtu 500
-  fi
-  done
-
-  for arg in "$@"; do
-    if [ "$arg" = "-6" ]; then
-
-        # Shutdown IPV6
-      
-         sysctl -w -q net.ipv6.conf.all.disable_ipv6=1 > /dev/null
-         sysctl -w -q net.ipv6.conf.default.disable_ipv6=1 > /dev/null
-         sysctl -w -q net.ipv6.conf.lo.disable_ipv6=1 > /dev/null
-      
-         sysctl -p
-      
-        # Disable IPV6 Permanent
-      
-        if grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf; then
-         sed -i 's/net.ipv6.conf.all.disable_ipv6 = 0/net.ipv6.conf.all.disable_ipv6 = 1/g' /etc/sysctl.conf
-        else
-        echo "net.ipv6.conf.all.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-        fi
-      
-        if grep -q "net.ipv6.conf.default.disable_ipv6" /etc/sysctl.conf; then
-         sed -i 's/net.ipv6.conf.default.disable_ipv6 = 0/net.ipv6.conf.default.disable_ipv6 = 1/g' /etc/sysctl.conf
-        else
-        echo "net.ipv6.conf.default.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-        fi
-      
-        if grep -q "net.ipv6.conf.lo.disable_ipv6" /etc/sysctl.conf; then
-         sed -i 's/net.ipv6.conf.lo.disable_ipv6 = 0/net.ipv6.conf.lo.disable_ipv6 = 1/g' /etc/sysctl.conf
-        else
-        echo "net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-        fi
-
-      fi
-  done
-
-  # Import Public Keys for 3rd Party Repos
-
-  keys=("ABF5BD827BD9BF62" "7FCC7D46ACCC4CF8" "467B942D3A79BD29")
-  descriptions=("nginx" "postgre" "mysql")
-  
-  for i in "${!keys[@]}"; do
-    key="${keys[$i]}"
-    description="${descriptions[$i]}"
-    gpg_file="/etc/apt/trusted.gpg.d/$description.gpg"
-  
-    if !  gpg --list-keys | grep -q "$key"; then
-      echo "Receiving and exporting GPG key for $description..."
-       gpg --keyserver keyserver.ubuntu.com --recv-keys "$key"
-       gpg --export "$key" > "$gpg_file"
-    fi
-  done
-
-  # Add Additional Repos
-
-  if ! check_repository "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"; then
-     add-apt-repository -y "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -c -s) mysql-8.0"
-  fi
-  
-  if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
-     add-apt-repository -y "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"
-  fi
-  
-  if ! check_repository "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"; then
-     add-apt-repository -y "deb http://nginx.org/packages/mainline/ubuntu/ $(lsb_release -c -s) nginx"
-  fi
-
-  local repos=("ondrej/php" "ondrej/apache2")
-  for repo in "${repos[@]}"; do
-  if ! grep -q "$repo" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-    echo "Adding ppa:$repo Repository..."
-     add-apt-repository -y "ppa:$repo"
-  fi
-  done
-
-  # Execute Updates & Install necessities
-
-  export DEBIAN_FRONTEND=noninteractive
-
-  local packages_to_install=()
-  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq nala; do
-    if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
-      packages_to_install+=("$package")
-    fi
-  done
-
-  if ! dpkg -l | grep -q "nala"; then
-      apt-get -y install "nala"
-      nala fetch -c DE --fetches 5 --auto --https-only
-  fi
-  
-  if [ ${#packages_to_install[@]} -gt 0 ]; then
-    nala install "${packages_to_install[@]}" --assume-yes --update --install-recommends
-  fi
-  
-  nala upgrade --assume-yes --full --autoremove --update --fix-broken --purge
-  
-  # Update and spread latest .bashrc
-
-   curl -H "Cache-Control: no-cache" -o /root/.bashrc https://raw.githubusercontent.com/PhilippElhaus/Config/main/.bashrc
-  local root_bashrc="/root/.bashrc"
-  
-  if [ -f "$root_bashrc" ]; then
-    for user_home in /home/*; do
-    if [ -d "$user_home" ]; then
-      user_bashrc="$user_home/.bashrc"
-      cp "$root_bashrc" "$user_bashrc"
-    fi
-    done
-  fi
-
-  source ~/.bashrc
-
-  # Display Version
-
-  local data=$(curl -H "Cache-Control: no-cache" -s "https://api.github.com/repos/PhilippElhaus/Config/commits?path=.bashrc")
-  local commit_hash=$(echo $data | jq -r '.[0].sha' | cut -c 1-7)
-  local now=$(date +%s)
-  local commit_time=$(date -d "$(echo $data | jq -r '.[0].commit.committer.date')" +%s)
-  local diff=$((now - commit_time))
-  local time_ago=""
-
-  if [ $diff -lt 60 ]; then
-      time_ago="$diff seconds ago"
-  elif [ $diff -lt 3600 ]; then
-      time_ago=$((diff / 60))" minutes ago"
-  elif [ $diff -lt 86400 ]; then
-      time_ago=$((diff / 3600))" hours ago"
-  else
-      time_ago=$((diff / 86400))" days ago"
-  fi
-
-  echo -e ".bashrc Commit: [\033[0;32m$commit_hash\033[0m] ($time_ago)"
-
-  # Reset MTU to 1500
-
-  for adapter in $adapters; do
-  if [[ "$adapter" == "eth"* ]] || [[ "$adapter" == "ens"* ]]; then
-    ip link set dev "$adapter" mtu 1500
-  fi
-  done
-
-  # MOTD and Hostname Change
-
-  for ((i=1; i<=$#; i++)); do
-    arg="${!i}"
-    if [ "$arg" == "--hostname" ]; then
-      ((i++))
-      hostname="${!i}"
-          if [ -n "$hostname" ]; then
-                   sh -c "echo '$hostname' > /etc/hostname"
-                   sed -i "s/127.0.1.1.*/127.0.1.1 $hostname/" /etc/hosts
-                  break
-          fi
-    fi
-  done
-
-  for ((i=1; i<=$#; i++)); do
-    arg="${!i}"
-
-    if [ "$arg" == "--welcome" ]; then
-      ((i++)) 
-      welcome="${!i}"
-          if [ -n "$welcome" ]; then
-    rm -f /etc/update-motd.d/*
-    tee /etc/update-motd.d/99-custom-motd <<EOL
-#!/bin/bash
-echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
-echo -e " " \$(lsb_release -s -d);
-echo -e " ";
-echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
-echo -e " ";
-echo -e "  \e[1;31m---  Commands  ---\e[0m\n"
-echo -e "  search <file>"
-echo -e "  ips\t| netstat\t| users"
-echo -e "  ns\t| gw\t\t| services"
-echo -e "  dir\t| tree\t\t| status <service>"
-echo -e "  ports\t| proc\t\t| restart <service>"
-echo -e " "
-EOL
-    chmod +x /etc/update-motd.d/99-custom-motd
-    run-parts /etc/update-motd.d/
-                  break
-          fi
-    fi
-  done
-  
-} 2> >(colorize_errors)
-  echo -e "\e[91m---  Upgrade Complete ---\e[0m"
 }
 
 # Usability
