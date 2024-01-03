@@ -66,7 +66,7 @@ unalias install_ftp 2> /dev/null
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-alias ll='ls -alF'
+alias ll='ls -alhF'
 alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
@@ -76,6 +76,7 @@ alias hex='xxd'
 alias dc='cd'
 alias st='status'
 alias hi='history'
+alias copy='cp'
 
 alias ips="ip addr show | awk '/inet / {print \$2}' | cut -d' ' -f1"
 alias nameserver="grep '^nameserver' /etc/resolv.conf | awk '{print}'"
@@ -87,6 +88,7 @@ alias linux='lsb_release -s -d'
 
 if [ "$(lsb_release -si)" = "Debian" ]; then
 alias su='su --login'
+alias sudo=''
 fi
 
   # Helper Functions
@@ -363,6 +365,9 @@ upgrade() {
       ((i++)) 
       welcome="${!i}"
           if [ -n "$welcome" ]; then
+            if [ -f /etc/motd ] && grep -qi "Debian" /etc/os-release; then
+              > /etc/motd
+            fi
     rm -f /etc/update-motd.d/*
     tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
