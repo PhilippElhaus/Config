@@ -856,6 +856,14 @@ search() {
     echo "Search done."
 }
 
+string() {
+    if [ $# -eq 1 ]; then
+        find . -type f -exec grep -n -H -a "$1" {} + 2>/dev/null
+    else
+        echo "Usage: string <pattern>"
+    fi
+}
+
 users() {
     if [[ "$1" == "?" ]]; then
         cut -d: -f1 /etc/passwd | sort
