@@ -242,7 +242,7 @@ upgrade() {
     apt-get -y install "gpg"
   fi
 
-  keys=("ABF5BD827BD9BF62" "7FCC7D46ACCC4CF8" "467B942D3A79BD29")
+  keys=("ABF5BD827BD9BF62" "7FCC7D46ACCC4CF8" "B7B3B788A8D3785C")
   descriptions=("nginx" "postgre" "mysql")
   
   for i in "${!keys[@]}"; do
@@ -260,7 +260,7 @@ upgrade() {
   # Add Additional Repos
 
   if ! check_repository "deb http://repo.mysql.com/apt/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) mysql-8.0"; then
-     add_repository "deb http://repo.mysql.com/apt/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) mysql-8.0"
+     add_repository "deb http://repo.mysql.com/apt/$(lsb_release -si | tr '[:upper:]' '[:lower:]')/ $(lsb_release -c -s) mysql-8.0";
   fi
   
   if ! check_repository "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -c -s)-pgdg main"; then
