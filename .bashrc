@@ -190,7 +190,10 @@ upgrade() {
 
   if [ "$(lsb_release -si)" = "Ubuntu" ]; then
     timedatectl set-timezone CET
-    sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+
+    if [ -e "/etc/needrestart/needrestart.conf" ]; then
+        sed -i "/#\$nrconf{restart} = 'i';/s/.*/\$nrconf{restart} = 'a';/" /etc/needrestart/needrestart.conf
+    fi
   fi
 
   #Temporary MTU @ 500
