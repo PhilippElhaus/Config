@@ -7,4 +7,6 @@ COPY wwwroot /app/wwwroot
 
 EXPOSE 8080
 
+VOLUME /app/data
+
 CMD ["dotnet", "CV.dll"]

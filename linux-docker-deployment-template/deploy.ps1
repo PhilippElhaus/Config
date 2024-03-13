@@ -1,18 +1,39 @@
-Write-Host "Cleaning up old images..."
-docker images -q -f "reference=cv" | ForEach-Object { docker rmi -f $_ }
+try 
+{
+	$name = $env:DeployProjectName.Trim().ToLower()
+	$server =  $env:DeployServerIP.Trim()
+	$port = $env:DeployOnWebserverPort.Trim()
+	$privKey = $env:DeployKeyPath.Trim()
+	
+	Write-Host "Value from environment variable: $name"
+	Write-Host "Cleaning up old images..."
+	docker images -q -f "reference=${name}" | ForEach-Object { docker rmi -f $_ }
 
-Write-Host "Building DOCKER Image..."
-docker build -t cv -f Dockerfile .
+	Write-Host "Building Docker Image..."
+	docker build -t $name -f Dockerfile . --quiet
 
-Write-Host "Exporting DOCKER Image..."
-docker save -o cv.tar cv
+	Write-Host "Saving Docker Image..."
+	docker save -o "${name}.tar" "${name}"
 
-$privKey = "C:\Users\Philipp Elhaus\.ssh\id_rsa"
-$remoteIP = "172.28.0.6"
+	Write-Host "Exporting Docker Image to Server..."
+	scp -i "${privKey}" "${name}.tar" "root@${server}:/tmp"
+	scp -i "${privKey}" server.sh "root@${server}:~/"
+	Write-Host "Executing Shell Script on remote Server..."
+	ssh -i "${privKey}" "root@${server}" "export deployname=$name; export deployport=$port; chmod +x server.sh; bash ~/server.sh"
 
-scp -i $privKey cv.tar root@172.28.0.6:/tmp
-scp -i $privKey server.sh root@172.28.0.6:~/
-ssh -i $privKey root@172.28.0.6 "chmod +x server.sh; bash ~/server.sh"
+	if ($LASTEXITCODE -ne 0) {
+		throw "Error in Linux shell script"
+	}
 
-Start-Process "http://172.28.0.6:8080"
-Read-Host "Press Enter to exit"
+	Write-Host "Cleaning up..."
+	Remove-Item -Path ".\${name}.tar" -Force
+
+	Start-Process "http://${server}:${port}"
+
+	Write-Host "--- Host: Done ---"
+}
+catch 
+{
+	Write-Host "Error: $($_.Exception.Message)"
+	exit 1
+}
