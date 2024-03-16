@@ -289,7 +289,7 @@ upgrade() {
   export DEBIAN_FRONTEND=noninteractive
 
   local packages_to_install=()
-  for package in net-tools wget cmatrix curl lsof nano nmap tree unzip jq nala; do
+  for package in net-tools wget cmatrix curl lsof nano nmap plocate tree unzip jq nala; do
     if ! dpkg -l | awk '{print $2}' | grep -q "^$package$"; then
       packages_to_install+=("$package")
     fi
@@ -819,9 +819,14 @@ proc() {
 }
 
 ports() {
-  if [ $# -ne 1 ]; then
+  if [ $# -gt 1 ]; then
     echo "Usage: ports <process_name>"
     return 1
+  fi
+
+  if [ $# -eq 0 ]; then
+    nmap localhost | grep --color=never '^[0-9]'
+    return 0
   fi
 
   process_name="$1"
