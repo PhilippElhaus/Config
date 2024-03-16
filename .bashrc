@@ -386,10 +386,13 @@ upgrade() {
     tee /etc/update-motd.d/99-custom-motd <<EOL
 #!/bin/bash
 echo -e "\n  \e[1;31m---  $welcome  ---\e[0m\n"
-echo -e " " \$(lsb_release -s -d);
-echo -e " ";
+echo -e "  \$(lsb_release -s -d)"
+echo -e " "
 echo "$( /usr/share/landscape/landscape-sysinfo.wrapper* 2>/dev/null )" | sed '/^  Swap usage:/d; /^  System information as of/d; /^[[:space:]]*$/d'
-echo -e " ";
+echo -e " "
+echo -e "  CPU: $(cat /proc/cpuinfo | grep "model name" | uniq | awk -F: '{print $2}' | sed 's/^[ \t]*//')"
+echo -e "  RAM: $(free -m | awk '/^Mem:/ {printf "%.2f GByte\n", $2/1024}')"
+echo -e " "
 echo -e "  \e[1;31m---  Commands  ---\e[0m\n"
 echo -e "  search <file>"
 echo -e "  ips\t| netstat\t| users"
