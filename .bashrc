@@ -91,6 +91,12 @@ alias gw='gateway'
 alias net='ips; nameserver; gateway'
 alias linux='lsb_release -s -d'
 
+if dpkg-query -l nala >/dev/null 2>&1; then
+    alias apt='nala'
+  else
+    unalias apt
+fi
+
 if [ "$(lsb_release -si)" = "Debian" ]; then
 alias su='su --login'
 alias sudo=''
