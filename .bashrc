@@ -834,7 +834,7 @@ ports() {
   fi
 
   if [ $# -eq 0 ]; then
-    nmap localhost | grep --color=never '^[0-9]'
+    nmap --top-ports 65535 localhost| grep --color=never '^[0-9]'
     return 0
   fi
 
