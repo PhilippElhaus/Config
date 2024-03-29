@@ -94,12 +94,12 @@ alias linux='lsb_release -s -d'
 if dpkg-query -l nala >/dev/null 2>&1; then
     alias apt='nala'
   else
-    unalias apt
+    unalias apt 2> /dev/null
 fi
 
-if [ "$(lsb_release -si)" = "Debian" ]; then
-alias su='su --login'
-alias sudo=''
+if command -v lsb_release >/dev/null 2>&1 && [ "$(lsb_release -si)" = "Debian" ]; then
+    alias su='su --login'
+    alias sudo=''
 fi
 
   # Helper Functions
