@@ -731,18 +731,31 @@ install_ftp() {
     sudo systemctl restart vsftpd
 }
 
-generate_cert() {
-    # Check if OpenSSL is installed
+generate_certificate() {
     if ! command -v openssl &> /dev/null; then
-        echo "Error: OpenSSL is not installed. Please install OpenSSL and try again."
-        exit 1
+        echo "OpenSSL is not installed. Attempting to install ..."
+        sudo apt-get update
+        sudo apt-get install openssl -y
+        if ! command -v openssl &> /dev/null; then
+            echo "Error: Failed to install OpenSSL."
+            exit 1
+        fi
     fi
 
+    read -s -p "Enter password for PKCS#12 file: " pfx_password
+    echo
+
     mkdir -p ~/keys
+    rm -f ~/keys/*
+
     openssl genpkey -algorithm RSA -out ~/keys/private_key.pem
     openssl rsa -in ~/keys/private_key.pem -pubout -out ~/keys/public_key.pem
     openssl req -x509 -new -key ~/keys/private_key.pem -out ~/keys/certificate.crt -days 365
-    echo "Private key, public key, and certificate generated in ~/keys folder."
+    openssl pkcs12 -export -out ~/keys/certificate.pfx -inkey ~/keys/private_key.pem -in ~/keys/certificate.crt -passout pass:$pfx_password
+
+    ls -l ~/keys
+
+    echo -e "\033[0;31m--- Done ---\033[0m"
 }
 
 # Usability
