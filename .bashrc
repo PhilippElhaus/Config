@@ -731,6 +731,20 @@ install_ftp() {
     sudo systemctl restart vsftpd
 }
 
+generate_cert() {
+    # Check if OpenSSL is installed
+    if ! command -v openssl &> /dev/null; then
+        echo "Error: OpenSSL is not installed. Please install OpenSSL and try again."
+        exit 1
+    fi
+
+    mkdir -p ~/keys
+    openssl genpkey -algorithm RSA -out ~/keys/private_key.pem
+    openssl rsa -in ~/keys/private_key.pem -pubout -out ~/keys/public_key.pem
+    openssl req -x509 -new -key ~/keys/private_key.pem -out ~/keys/certificate.crt -days 365
+    echo "Private key, public key, and certificate generated in ~/keys folder."
+}
+
 # Usability
 
 services ()
