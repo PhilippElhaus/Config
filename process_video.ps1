@@ -94,8 +94,13 @@ $InputDir = (Resolve-Path -LiteralPath $InputDir).Path
 $OutDir = Join-Path $InputDir $OutSubDir
 New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
 
-$files = Get-ChildItem -LiteralPath $InputDir -File -Filter "*.mp4"
+$files = @(Get-ChildItem -LiteralPath $InputDir -File -Filter "*.mp4")
 $total = $files.Count
+
+if ($total -lt 1) {
+	Write-Host "No .mp4 files found in: $InputDir"
+	return
+}
 $i = 0
 $swTotal = [System.Diagnostics.Stopwatch]::StartNew()
 
