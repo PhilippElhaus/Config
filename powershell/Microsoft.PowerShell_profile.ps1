@@ -3,7 +3,6 @@
 # Public Domain, 2025 — Philipp Elhaus
 # ==============================================================================
 
-# Remove built-in alias so our ls is used
 Remove-Item Alias:ls -ErrorAction SilentlyContinue
 
 
@@ -82,7 +81,7 @@ function ll {
 					}
 				}
 			} |
-		Format-Table --column 
+		Format-Table -AutoSize
 }
 Remove-Item Alias:history -ErrorAction SilentlyContinue
 
