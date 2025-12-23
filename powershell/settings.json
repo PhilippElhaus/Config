@@ -1,37 +1,31 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
-    "actions": 
+    "actions": [],
+    "copyFormatting": "none",
+    "copyOnSelect": false,
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "disableAnimations": true,
+    "keybindings": 
     [
         {
-            "command": 
-            {
-                "action": "copy",
-                "singleLine": false
-            },
+            "id": "Terminal.CopyToClipboard",
             "keys": "ctrl+c"
         },
         {
-            "command": "paste",
+            "id": "Terminal.FindText",
+            "keys": "ctrl+shift+f"
+        },
+        {
+            "id": "Terminal.PasteFromClipboard",
             "keys": "ctrl+v"
         },
         {
-            "command": 
-            {
-                "action": "splitPane",
-                "split": "auto",
-                "splitMode": "duplicate"
-            },
+            "id": "Terminal.DuplicatePaneAuto",
             "keys": "alt+shift+d"
-        },
-        {
-            "command": "find",
-            "keys": "ctrl+shift+f"
         }
     ],
-    "copyFormatting": "none",
-    "copyOnSelect": false,
-    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "language": "en-US",
     "newTabMenu": 
     [
         {
@@ -44,33 +38,56 @@
         {
             "adjustIndistinguishableColors": "always",
             "colorScheme": "Tango Dark",
-            "cursorShape": "underscore",
+			"cursorShape": "filledBox",
+            "experimental.retroTerminalEffect": false,
             "font": 
             {
-                "face": "Cascadia Code",
-                "size": 18.0,
-                "weight": "medium"
+                "face": "Cascadia Mono",
+                "size": 12
             },
-            "padding": "10",
-            "scrollbarState": "hidden",
-            "tabTitle": "Terminal"
+            "icon": "none",
+			"padding": "10",
+            "opacity": 100,
+            "startingDirectory": "C:\\Users\\Philipp Elhaus\\Desktop",
+            "tabTitle": "Terminal",
+            "useAcrylic": false
         },
         "list": 
         [
             {
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": false,
+                "name": "PowerShell 7.5",
+                "source": "Windows.Terminal.PowershellCore",
+                "startingDirectory": "C:\\Users\\Philipp Elhaus\\Desktop"
+            },
+            {
+                "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "hidden": false,
+                "name": "PowerShell 5.1"
+            },
+            {
                 "commandline": "%SystemRoot%\\System32\\cmd.exe",
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
-                "name": "Command Line"
+                "name": "Command Prompt"
             },
             {
-                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "guid": "{eae8e26a-41dc-50e8-8614-b56ec0cd3099}",
                 "hidden": false,
-                "name": "Windows PowerShell"
+                "name": "Ubuntu",
+                "source": "Microsoft.WSL"
+            },
+            {
+                "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+                "hidden": false,
+                "name": "Azure Cloud Shell",
+                "source": "Windows.Terminal.Azure"
             }
         ]
     },
-    "schemes": 
+   "schemes": 
     [
         {
             "background": "#000000",
@@ -96,5 +113,9 @@
             "yellow": "#C4A000"
         }
     ],
-    "themes": []
+    "themes": [],
+    "warning.confirmCloseAllTabs": false,
+    "warning.inputService": false,
+    "warning.largePaste": false,
+    "warning.multiLinePaste": false
 }
