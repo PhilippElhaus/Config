@@ -1,0 +1,22 @@
+include "/usr/share/nano/*.nanorc"
+
+bind ^X cut main
+bind ^C copy main
+bind ^V paste all
+bind ^Q exit all
+bind ^S savefile main
+bind ^W writeout main
+bind ^O insert main
+bind ^H help all
+bind ^F whereis all
+bind ^G findnext all
+bind ^B wherewas all
+bind ^D findprevious all
+bind ^R replace main
+bind ^Z undo main
+bind ^Y redo main
+bind ^A mark main
+bind ^P location main
+bind ^T gotoline main
+bind ^L linter execute
+bind ^E execute main
