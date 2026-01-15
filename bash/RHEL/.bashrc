@@ -16,10 +16,10 @@ shopt -s checkwinsize
 
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-chroot_name=""
-if [ -r /etc/os-release ]; then
-	. /etc/os-release
-	[ -n "${NAME:-}" ] && chroot_name="$NAME"
+chroot_name="rhel"
+
+if [ -f /.dockerenv ] || grep -qa container= /proc/1/environ 2>/dev/null; then
+	chroot_name="cntr"
 fi
 
 case "$TERM" in
