@@ -85,6 +85,11 @@ alias net='ips; nameserver; gateway'
 
 alias list='rpm -qa | sort'
 
+if ! command -v clear >/dev/null 2>&1; then
+	clear() { printf '\033c'; }
+fi
+alias cls='clear'
+
 if command -v rpm >/dev/null 2>&1; then
 	alias linux="rpm -q --whatprovides redhat-release --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' 2>/dev/null || cat /etc/redhat-release 2>/dev/null"
 else
@@ -339,8 +344,9 @@ fi
 if [[ $- == *i* ]]; then
 	echo
 	echo "Custom Commands:"
-	echo " cleanup remove services status restart"
-	echo " proc ports search string users"
-	echo " route df du pushd netstat tree"
+	echo "  cleanup   remove   services   status   restart"
+	echo "  proc      ports    search     string    users"
+	echo "  route     df       du         pushd     netstat   tree"
 	echo
 fi
+
