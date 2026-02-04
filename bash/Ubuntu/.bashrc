@@ -65,6 +65,7 @@ unalias tree 2>/dev/null
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 ll() {
+	
 	local -a ls_cmd=(ls -aldhF --color=auto)
 	local entry
 
@@ -81,6 +82,7 @@ ll() {
 		"${ls_cmd[@]}" -- "$entry"
 	done < <(find . -mindepth 1 -maxdepth 1 ! -type d ! -type l -print0 | sort -z)
 }
+
 alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
