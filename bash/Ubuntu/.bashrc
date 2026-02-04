@@ -64,13 +64,23 @@ unalias tree 2>/dev/null
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-# ll() {
-# 	local -a ls_cmd=(ls -aldhF --color=auto)
+ll() {
+	local -a ls_cmd=(ls -aldhF --color=auto)
+	local entry
 
-# 	find . -mindepth 1 -maxdepth 1 -type d -printf '%p\0' | sort -z | sed -z 's#^\./##' | xargs -0r "${ls_cmd[@]}"
-# 	find . -mindepth 1 -maxdepth 1 -type l -printf '%p\0' | sort -z | sed -z 's#^\./##' | xargs -0r "${ls_cmd[@]}"
-# 	find . -mindepth 1 -maxdepth 1 ! -type d ! -type l -printf '%p\0' | sort -z | sed -z 's#^\./##' | xargs -0r "${ls_cmd[@]}"
-# }
+	while IFS= read -r -d '' entry; do
+		entry=${entry#./}
+		"${ls_cmd[@]}" -- "$entry"
+	done < <(find . -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+	while IFS= read -r -d '' entry; do
+		entry=${entry#./}
+		"${ls_cmd[@]}" -- "$entry"
+	done < <(find . -mindepth 1 -maxdepth 1 -type l -print0 | sort -z)
+	while IFS= read -r -d '' entry; do
+		entry=${entry#./}
+		"${ls_cmd[@]}" -- "$entry"
+	done < <(find . -mindepth 1 -maxdepth 1 ! -type d ! -type l -print0 | sort -z)
+}
 alias la='ls -A'
 alias l='ls -CF'
 alias cls='clear -x'
