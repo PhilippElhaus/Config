@@ -73,6 +73,6 @@ tree() {
 }
 
 if [[ -o interactive ]]; then
-    echo "Mac Mini Terminal Ready"
+    echo "ZShell Terminal Ready"
     echo "Commands: proc, search, string, net, hi, cls, tree"
 fi
