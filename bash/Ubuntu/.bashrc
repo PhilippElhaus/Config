@@ -273,7 +273,7 @@ fi
 
 if [[ $- == *i* ]]; then
 	echo
-	echo "Custom Commands:"
+	echo "Bash Terminal"
 	echo "  cleanup   remove   services   status   restart"
 	echo "  proc      ports    search     string    users"
 	echo "  route     df       du         pushd     netstat   tree"
