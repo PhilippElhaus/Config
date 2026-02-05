@@ -73,5 +73,5 @@ tree() {
 
 if [[ -o interactive ]]; then
     echo "ZShell Terminal Ready"
-    echo "Commands: proc, search, string, net, hi, cls, tree"
+    echo "Commands: proc, search, string, net, hi, cls"
 fi
