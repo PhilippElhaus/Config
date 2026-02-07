@@ -19,7 +19,7 @@ alias ls='ls -G'
 alias grep='grep --color=auto'
 
 alias la='ls -A'
-alias ll='ls -lhG'
+alias ll='ls -lahr'
 alias l='ls -CF'
 alias cls='clear'
 alias hex='xxd'
