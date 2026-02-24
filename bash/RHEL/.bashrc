@@ -105,6 +105,33 @@ if [ -d /work ] && [ "$PWD" = "$HOME" ]; then
 	cd /work
 fi
 
+validate() {
+    if [ -z "$1" ]; then
+        echo "ERROR: missing file argument"
+        echo "Usage: validate <file.json>"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]; then
+        echo "ERROR: file not found: $1"
+        return 1
+    fi
+
+    local err
+    err=$(jq empty "$1" 2>&1 >/dev/null)
+
+    if [ $? -eq 0 ]; then
+        echo "OK     $1 is valid JSON"
+        return 0
+    else
+        echo "FAIL   $1 is invalid JSON"
+        echo "------"
+        echo "$err"
+        echo "------"
+        return 1
+    fi
+}
+
 cleanup() {
 	if [ "$EUID" -ne 0 ]; then
 		echo "You need to be root."
