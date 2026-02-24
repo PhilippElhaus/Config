@@ -105,6 +105,22 @@ if [ -d /work ] && [ "$PWD" = "$HOME" ]; then
 	cd /work
 fi
 
+clean() {
+    if [ -z "$1" ]; then
+        echo "ERROR: missing file argument"
+        echo "Usage: clean <file>"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]; then
+        echo "ERROR: file not found: $1"
+        return 1
+    fi
+
+    : > "$1"
+    echo "OK     cleaned: $1"
+}
+
 validate() {
     if [ -z "$1" ]; then
         echo "ERROR: missing file argument"

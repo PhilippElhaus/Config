@@ -37,6 +37,22 @@ alias net='ips; nameserver; gateway'
 df() { [ "$#" -eq 0 ] && command df -h || command df "$@"; }
 du() { [ "$#" -eq 0 ] && command du -sh || command du "$@"; }
 
+clean() {
+    if [ -z "$1" ]; then
+        echo "ERROR: missing file argument"
+        echo "Usage: clean <file>"
+        return 1
+    fi
+
+    if [ ! -f "$1" ]; then
+        echo "ERROR: file not found: $1"
+        return 1
+    fi
+
+    : > "$1"
+    echo "OK     cleaned: $1"
+}
+
 validate() {
     if [ -z "$1" ]; then
         echo "ERROR: missing file argument"
