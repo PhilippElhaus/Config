@@ -1,3 +1,8 @@
+# ==============================================================================
+# Copy-paste ready script for creating install-dev-tools.sh.
+# Public Domain; 2026 Philipp Elhaus
+# ==============================================================================
+
 cat > install-dev-tools.sh <<'EOF'
 #!/usr/bin/env bash
 
