@@ -1,10 +1,10 @@
 # ==============================================================================
-# Copy-paste ready script for creating install-dev-tools.sh.
+# Copy-paste ready script for creating install-dev-tools-wsl.sh.
 # Intended to be run inside WSL on a Windows install.
 # Public Domain; 2026 Philipp Elhaus
 # ==============================================================================
 
-cat > install-dev-tools.sh <<'EOF'
+cat > install-dev-tools-wsl.sh <<'EOF'
 #!/usr/bin/env bash
 
 set +e
@@ -294,5 +294,5 @@ log "Done. Restart WSL afterwards with: wsl --shutdown"
 print_summary
 EOF
 
-chmod +x install-dev-tools.sh
-./install-dev-tools.sh
+chmod +x install-dev-tools-wsl.sh
+./install-dev-tools-wsl.sh
