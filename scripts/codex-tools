@@ -1,0 +1,82 @@
+cat > install-dev-tools.sh <<'EOF'
+#!/usr/bin/env bash
+
+set +e
+
+log() {
+	printf "\n[INFO] %s\n" "$1"
+}
+
+run() {
+	printf "\n[RUN] %s\n" "$*"
+	bash -c "$*"
+	if [ $? -ne 0 ]; then
+		printf "[WARN] Failed, continuing: %s\n" "$*"
+	fi
+}
+
+log "Updating apt"
+run "sudo apt update"
+run "sudo apt upgrade -y"
+
+log "Installing core packages"
+run "sudo apt install -y build-essential curl wget git unzip zip tar jq make cmake ninja-build pkg-config software-properties-common apt-transport-https ca-certificates gnupg lsb-release ripgrep fd-find fzf tree xclip htop btop net-tools dnsutils iputils-ping tmux zsh sqlite3 python3 python3-pip python3-venv pipx golang-go openjdk-21-jdk"
+
+log "Configuring pipx"
+run "pipx ensurepath"
+
+log "Installing Node.js LTS"
+run "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -"
+run "sudo apt install -y nodejs"
+
+log "Installing global npm tools"
+run "sudo npm install -g npm yarn pnpm typescript ts-node eslint prettier"
+
+log "Installing Rust"
+run "curl https://sh.rustup.rs -sSf | sh -s -- -y"
+
+log "Installing Docker"
+run "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg"
+run "echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+run "sudo apt update"
+run "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+run "sudo usermod -aG docker \$USER"
+
+log "Installing kubectl"
+run "curl -LO \"https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\""
+run "sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl"
+run "rm -f kubectl"
+
+log "Installing Helm"
+run "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
+
+log "Installing GitHub CLI"
+run "sudo mkdir -p -m 755 /etc/apt/keyrings"
+run "wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null"
+run "sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg"
+run "echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null"
+run "sudo apt update"
+run "sudo apt install gh -y"
+
+log "Installing Azure CLI"
+run "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+
+log "Installing common Python packages"
+run "python3 -m pip install --user --break-system-packages virtualenv ipython notebook jupyterlab pandas numpy requests openai anthropic"
+
+log "Versions"
+run "git --version"
+run "node -v"
+run "npm -v"
+run "python3 --version"
+run "docker --version"
+run "kubectl version --client"
+run "helm version"
+run "gh --version"
+run "az version"
+
+log "Done. Restart WSL afterwards with: wsl --shutdown"
+EOF
+
+chmod +x install-dev-tools.sh
+./install-dev-tools.sh
