@@ -130,14 +130,30 @@ function Ensure-ChromeEdgeCachePolicies {
 	if ($changed) { }
 }
 
+function Get-PreferredPowerShellExecutable {
+	param(
+		[string]$ProgramFilesPath = [Environment]::GetFolderPath('ProgramFiles'),
+		[string]$WindowsPath = [Environment]::GetFolderPath('Windows')
+	)
+	$preferred = Join-Path $ProgramFilesPath 'PowerShell\7\pwsh.exe'
+	$fallback = Join-Path $WindowsPath 'System32\WindowsPowerShell\v1.0\powershell.exe'
+	foreach ($candidate in @($preferred, $fallback)) {
+		if ([IO.Path]::IsPathRooted($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+			return [IO.Path]::GetFullPath($candidate)
+		}
+	}
+	throw 'Neither the installed PowerShell 7 nor Windows PowerShell executable exists.'
+}
+
 function Ensure-ScheduledTasks {
 	param(
 		[Parameter(Mandatory)][string]$ScriptPath
 	)
+	$powerShellExecutable = Get-PreferredPowerShellExecutable
 
 	# Startup task (SYSTEM) for machine-level settings
 	if (-not (Get-ScheduledTask -TaskName $TaskStartupName -ErrorAction SilentlyContinue)) {
-		$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -Mode Run"
+		$action = New-ScheduledTaskAction -Execute $powerShellExecutable -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -Mode Run"
 		$trigger = New-ScheduledTaskTrigger -AtStartup
 
 		Register-ScheduledTask -TaskName $TaskStartupName `
@@ -150,7 +166,7 @@ function Ensure-ScheduledTasks {
 
 	# Logon task (current user) for HKCU TEMP/TMP
 	if (-not (Get-ScheduledTask -TaskName $TaskLogonName -ErrorAction SilentlyContinue)) {
-		$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -Mode Run"
+		$action = New-ScheduledTaskAction -Execute $powerShellExecutable -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`" -Mode Run"
 		$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:UserName
 
 		Register-ScheduledTask -TaskName $TaskLogonName `
