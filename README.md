@@ -2,6 +2,10 @@
 
 Versioned shell, editor, public-key, runner, synchronization, and media helpers for Philipp's workstations. This repository does not contain private keys or runtime secrets.
 
+Windows Terminal defaults to PowerShell 7. Its separate PowerShell 5.1 profile
+remains available for compatibility. Keep this default when applying the
+terminal settings. Do not replace unrelated local profiles or settings.
+
 ## Map
 
 | Path | Scope |
