@@ -1,0 +1,41 @@
+# imac.lan web ingress
+
+The existing Windows Caddy service owns ports 80 and 443. Its executable is
+`C:\Caddy\caddy.exe` and its live configuration is `C:\Caddy\Caddyfile`.
+`imac.Caddyfile` is the reviewed source for that configuration.
+
+| URL | Application |
+| --- | --- |
+| `https://cezar.imac.lan` | Installed Cezar through WSL, at `127.0.0.1:4321` |
+| `https://wtf.imac.lan` | The existing static `D:\WTF\Dev` workspace |
+| `http://localhost` and `http://127.0.0.1` | The existing WTF development root |
+
+The user authorized private LAN access without a separate login. HTTPS routes
+reject clients outside private address ranges. Cezar stays loopback-bound and
+uses `CEZ_REMOTE=1`, preserving its same-origin write and WebSocket checks.
+Hosted mode disables local editor handoff and account-configuration editing.
+The Caddy admin API remains loopback-only.
+
+Gateway owns the two DNS records at `10.0.0.30`. Server owns the Step CA at
+`https://ca.lan:8443/acme/acme/directory`. The public root certificate is copied
+from the existing `Z:\Certs\Elhaus-LAN-RootCA.cer` into
+`C:\Caddy\pki\Elhaus-LAN-RootCA.crt` after fingerprint verification. Private
+keys and ACME state stay in the Caddy service's normal data directory. Never
+copy CA private keys into this configuration or Git.
+
+## Apply and recover
+
+Verify the source diff. Run `caddy validate` with the installed public root.
+Back up the exact live Caddyfile before replacement. Copy this source to the
+live path, then use `caddy reload --config C:\Caddy\Caddyfile --adapter caddyfile`.
+Preserve the existing Windows service and its storage. Allow inbound TCP 80
+and 443 only from private LAN clients when a firewall rule is needed.
+
+Check DNS, HTTP redirects, both HTTPS routes with normal certificate validation,
+the Cezar GitHub API, and the original localhost route. Check Cezar's WebSocket
+and same-origin guards. Server and Gateway must be available for certificate
+issuance and renewal. The existing Caddy service starts with Windows; the
+Cezar WSL controller still uses its explicit start command after a reboot.
+
+For rollback, restore the exact retained Caddyfile and reload it. Remove only
+the firewall rule created for this change if present. Preserve all Caddy data.

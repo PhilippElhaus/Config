@@ -15,6 +15,7 @@ reviewed action update; running the installer also runs the storage payload.
 | Path | Scope |
 | --- | --- |
 | `bash/` | Bash and terminal configuration. |
+| `caddy/` | Private LAN HTTPS ingress for the imac workstation. |
 | `powershell/` | PowerShell profile and terminal settings. |
 | `Public Keys/` | Public SSH and OpenPGP keys only. |
 | `scripts/` | Codex setup, RAM-disk, media, branch, and NAS synchronization helpers. |

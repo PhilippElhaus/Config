@@ -1,0 +1,40 @@
+{
+	email fil@philipp-elhaus.de
+	servers {
+		protocols h1 h2
+	}
+}
+
+(lan_only) {
+	@outside_lan not remote_ip private_ranges
+	respond @outside_lan "Private LAN service" 403
+}
+
+(step_ca_tls) {
+	tls {
+		issuer acme {
+			dir https://ca.lan:8443/acme/acme/directory
+			trusted_roots C:/Caddy/pki/Elhaus-LAN-RootCA.crt
+		}
+	}
+}
+
+http://localhost:80, http://127.0.0.1:80 {
+	root * D:/WTF/Dev
+	file_server
+}
+
+cezar.imac.lan {
+	import lan_only
+	import step_ca_tls
+	reverse_proxy http://127.0.0.1:4321
+}
+
+wtf.imac.lan {
+	import lan_only
+	import step_ca_tls
+	root * D:/WTF/Dev
+	file_server {
+		hide .git .env .env.* .local local.settings.json
+	}
+}
