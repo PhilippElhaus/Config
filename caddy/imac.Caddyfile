@@ -24,12 +24,6 @@ http://localhost:80, http://127.0.0.1:80 {
 	file_server
 }
 
-cezar.imac.lan {
-	import lan_only
-	import step_ca_tls
-	reverse_proxy http://127.0.0.1:4321
-}
-
 wtf.imac.lan {
 	import lan_only
 	import step_ca_tls
