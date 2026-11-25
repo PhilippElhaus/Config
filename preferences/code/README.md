@@ -17,6 +17,7 @@ Development environments, version control, builds, and CI.
 - [Labs](workflow/labs.md)
 - [Search](workflow/search.md)
 - [Git](workflow/git.md)
+- [Delivery](workflow/delivery.md)
 - [Caches](workflow/caches.md)
 - [Builds](workflow/builds.md)
 - [Pipelines](workflow/pipelines.md)

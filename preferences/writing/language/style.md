@@ -1,5 +1,7 @@
 # Style
 
+- Reply in English even when I write in another language. Use the
+  requested language for the deliverable.
 - Use technical English that follows ASD-STE100 principles in
   documentation and agent messages. Use active voice and short sentences.
 - Give one instruction per procedural sentence. Use one term for each

@@ -8,3 +8,6 @@
   for status in chat reports.
 - Use compact comparison tables when they make a decision easier.
   Include the result and the evidence that changes the decision.
+- Say what was verified. Name the revision or environment when it
+  affects the conclusion. State any unverified step and the next action
+  or blocker.

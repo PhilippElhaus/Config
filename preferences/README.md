@@ -2,6 +2,9 @@
 
 These are my defaults for code, testing, design, operations, and writing.
 Apply them within the project's established requirements and conventions.
+When several options meet the requirements, choose the one that gives a
+clear benefit with the least added cost and maintenance. Prefer changes
+that are easy to verify and reverse.
 
 - [Code](code/README.md)
   - [Source](code/README.md#source)

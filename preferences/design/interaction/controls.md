@@ -13,5 +13,8 @@
   when the panel narrows.
 - Make the result of a toggle visible on the control. Give inactive,
   selected, and unavailable states distinguishable appearances.
+- Show role-specific controls to users with the matching role. When an
+  action normally available to the user is temporarily disabled, make the
+  reason easy to find.
 - Give controls quiet resting states. Use a hover or focus background
   to show which control is ready to act.
