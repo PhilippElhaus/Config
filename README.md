@@ -17,6 +17,7 @@ reviewed action update; running the installer also runs the storage payload.
 | `bash/` | Bash and terminal configuration. |
 | `caddy/` | Private LAN HTTPS ingress for the imac workstation. |
 | `powershell/` | PowerShell profile and terminal settings. |
+| [`preferences/`](preferences/README.md) | Code, testing, design, operations, and writing preferences. |
 | `Public Keys/` | Public SSH and OpenPGP keys only. |
 | `scripts/` | Codex setup, RAM-disk, media, branch, and NAS synchronization helpers. |
 | `scripts/gh-register/` | GitHub organization runner reconciliation. Read its [README](scripts/gh-register/README.md) before use. |
